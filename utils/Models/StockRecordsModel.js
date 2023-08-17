@@ -31,14 +31,16 @@ const StockRecordModel = global.DATA.CONNECTION.mysql.define("StockRecordModel",
         type: Sequelize.FLOAT,
         allowNull: false
     },
-    created_at: {
+    createdAt: {
         type: Sequelize.DATE,
         defaultValue: DATA.UTILS.currentTimeStamp()
     },
-    modified_at: {
+    modifiedAt: {
         type: Sequelize.DATE,
         defaultValue: DATA.UTILS.currentTimeStamp()
     }
 }, {
     tableName: "stock_records"
 })
+
+module.exports = StockRecordModel
