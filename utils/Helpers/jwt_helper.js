@@ -13,7 +13,7 @@ class JwtHelper {
             const secret = process.env.ACCESS_TOKEN_SECRETKEY
             const options = {
                 expiresIn: '1h',
-                issuer: 'pickurpage.com',
+                issuer: 'findemy.com',
                 audience: tokenPayload,
             }
             JWT.sign(payload, secret, options, (err, token) => {
