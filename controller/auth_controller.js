@@ -14,7 +14,7 @@ router.post('/register', async (req, res, next) => {
         res.send({
             "status": 201,
             "message": Constants.SUCCESS,
-            "id": data.dataValues
+            "data": data.dataValues
         })
     }
     catch (err) {
