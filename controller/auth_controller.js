@@ -27,7 +27,7 @@ router.post('/login', async (req, res, next) => {
     try {
         const authServiceObj = new AuthService();
 
-        const data = authServiceObj.login(req.body)
+        const data = await authServiceObj.login(req.body)
             .catch(err => {
                 throw err;
             });

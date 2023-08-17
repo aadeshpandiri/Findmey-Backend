@@ -3,5 +3,7 @@ module.exports = {
     REGISTER_SUCCESS: "User Registered Successfully",
     LOGIN_SUCCESS: "User Logged in Successfully",
     ERROR: "Error",
-    SQL_ERROR: "Error while fetching data/ writing data MySQL"
+    SQL_ERROR: "Error while fetching data/ writing data MySQL",
+    JWT_SIGN_ERROR: "Error During JWT Token Generation",
+    REDIS_ERROR: "Error while fetching data/ writing data Redis"
 }

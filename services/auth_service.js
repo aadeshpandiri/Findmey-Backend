@@ -48,7 +48,7 @@ class AuthService {
 
     async login(payload) {
         try {
-            const validateBody = await loginSchema.validateAsync(payload);
+            const validateBody = await loginSchema.validateAsync(payload);;
 
             const user = await UserModel.findOne({
                 "where": {
@@ -68,13 +68,10 @@ class AuthService {
                 throw createError.Unauthorized("Email/Password not valid")
             }
 
-            const tokenPayload = {
-                "id": user.dataValues.id,
-                "email": user.dataValues.email
-            }
+            const tokenPayload = user.dataValues.id.toString()
+            const accessToken = await this.jwtHelperObj.generateAccessToken(tokenPayload);
 
-            const accessToken = this.jwtHelperObj.generateAccessToken(tokenPayload);
-            const refreshToken = this.jwtHelperObj.generateRefreshToken(tokenPayload);
+            const refreshToken = await this.jwtHelperObj.generateRefreshToken(tokenPayload);
 
             const data = {
                 accessToken, refreshToken
