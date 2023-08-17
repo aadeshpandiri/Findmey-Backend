@@ -3,10 +3,11 @@ const UserModel = require('../utils/Models/UserModel')
 const Constants = require('../utils/Constants/response_messages')
 const bcrypt = require('bcrypt')
 const { loginSchema, registerSchema } = require('../utils/SchemaValidations/authvalidation')
+const JwtHelper = require('../utils/Helpers/jwt_helper')
 
 class AuthService {
     constructor() {
-
+        this.jwtHelperObj = new JwtHelper();
     }
 
     async registerUser(payload) {
@@ -16,7 +17,10 @@ class AuthService {
                 where: {
                     email: validateBody.email
                 }
+            }).catch(err => {
+                throw createError.InternalServerError(Constants.SQL_ERROR)
             })
+
             if (user) {
                 throw createError.Conflict(`${validateBody.email} has already been registered.`)
             }
@@ -32,10 +36,50 @@ class AuthService {
 
             const newUser = await UserModel.create(userPayload)
                 .catch(err => {
-                    throw createError.InternalServerError(Constants.ERROR_DURING_CREATION)
+                    throw createError.InternalServerError(Constants.SQL_ERROR)
                 });
 
             return newUser;
+        }
+        catch (err) {
+            throw err;
+        }
+    }
+
+    async login(payload) {
+        try {
+            const validateBody = await loginSchema.validateAsync(payload);
+
+            const user = await UserModel.findOne({
+                "where": {
+                    email: validateBody.email
+                }
+            }).catch(err => {
+                throw createError.InternalServerError(Constants.SQL_ERROR)
+            })
+
+            if (!user) {
+                throw createError.NotFound("User Not Registered")
+            }
+            const userPassword = user.dataValues.password;
+
+            const isValid = await bcrypt.compare(validateBody.password, userPassword);
+            if (!isValid) {
+                throw createError.Unauthorized("Email/Password not valid")
+            }
+
+            const tokenPayload = {
+                "id": user.dataValues.id,
+                "email": user.dataValues.email
+            }
+
+            const accessToken = this.jwtHelperObj.generateAccessToken(tokenPayload);
+            const refreshToken = this.jwtHelperObj.generateRefreshToken(tokenPayload);
+
+            const data = {
+                accessToken, refreshToken
+            }
+            return data
         }
         catch (err) {
             throw err;

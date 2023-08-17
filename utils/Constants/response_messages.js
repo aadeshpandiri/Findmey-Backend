@@ -1,4 +1,7 @@
 module.exports = {
-    ERROR_DURING_CREATION: "Something error occured during creation",
-    SUCCESS: "Success"
+    SUCCESS: "Success",
+    REGISTER_SUCCESS: "User Registered Successfully",
+    LOGIN_SUCCESS: "User Logged in Successfully",
+    ERROR: "Error",
+    SQL_ERROR: "Error while fetching data/ writing data MySQL"
 }

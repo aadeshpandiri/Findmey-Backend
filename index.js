@@ -3,7 +3,8 @@ require('dotenv').config();
 
 global.DATA = {
     CONNECTION: {
-        mysql: undefined
+        mysql: undefined,
+        redis: undefined
     },
     UTILS: {
         currentTimeStamp: function () {
@@ -14,11 +15,16 @@ global.DATA = {
 }
 
 const MySQLConnection = require('./utils/Connections/mysql_connection')
+const RedisConnection = require('./utils/Connections/redis_connection')
 
 const initializeConnection = async () => {
     try {
-        const connectionObj = new MySQLConnection();
-        await connectionObj.initialize();
+        const connectionObjMySQL = new MySQLConnection();
+        await connectionObjMySQL.initialize();
+
+        const connectionObjRedis = new RedisConnection();
+        await connectionObjRedis.initialize();
+
     } catch (err) {
         console.error('Error connecting to the database:', err);
     }
