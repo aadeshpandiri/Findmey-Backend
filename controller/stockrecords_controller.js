@@ -1,13 +1,19 @@
 const express = require('express')
 const StockRecordsService = require('../services/stockrecords_service')
+const JwtHelper = require('../utils/Helpers/jwt_helper')
 const Constants = require('../utils/Constants/response_messages')
 
 const router = express.Router()
+const jwtHelperObj = new JwtHelper();
 
-router.post('/saveStock', async (req, res, next) => {
+router.post('/saveStock', jwtHelperObj.verifyAccessToken, async (req, res, next) => {
     try {
         const stockRecordServiceObj = new StockRecordsService()
-        const data = await stockRecordServiceObj.saveStockRecord(req.body)
+        const payload = {
+            ...req.body,
+            "uid": parseInt(req.payload)
+        }
+        const data = await stockRecordServiceObj.saveStockRecord(payload)
             .catch(err => {
                 console.log("error", err.message);
                 throw err;
@@ -25,10 +31,11 @@ router.post('/saveStock', async (req, res, next) => {
     }
 })
 
-router.get('/getInvestementHistory/:uid', async (req, res, next) => {
+router.get('/getInvestmentHistory', jwtHelperObj.verifyAccessToken, async (req, res, next) => {
     try {
         const stockRecordServiceObj = new StockRecordsService()
-        const data = await stockRecordServiceObj.getInvestmentHistory(req.params.uid)
+        const userId = parseInt(req.payload);
+        const data = await stockRecordServiceObj.getInvestmentHistory(userId)
             .catch(err => {
                 throw err;
             })
@@ -43,10 +50,11 @@ router.get('/getInvestementHistory/:uid', async (req, res, next) => {
     }
 })
 
-router.get('/viewStocks/:uid', async (req, res, next) => {
+router.get('/viewStocks', jwtHelperObj.verifyAccessToken, async (req, res, next) => {
     try {
         const stockRecordServiceObj = new StockRecordsService()
-        const data = await stockRecordServiceObj.viewStocks(req.params.uid)
+        const userId = parseInt(req.payload);
+        const data = await stockRecordServiceObj.viewStocks(userId)
             .catch(err => {
                 console.log("Error occured", err.message);
                 throw err;

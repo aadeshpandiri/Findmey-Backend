@@ -57,16 +57,17 @@ class JwtHelper {
     }
 
     verifyAccessToken(req, res, next) {
-        if (!req.headers['Authorization']) return next(createError.Unauthorized())
-        const authHeader = req.headers['Authorization']
+        console.log(req)
+        if (!req.headers['authorization']) return next(createError.Unauthorized("Please provide token"))
+        console.log("Reached here")
+        const authHeader = req.headers['authorization']
         const bearerToken = authHeader.split(' ')
         const token = bearerToken[1]
         JWT.verify(token, process.env.ACCESS_TOKEN_SECRETKEY, (err, payload) => {
             if (err) {
-                const message = (err.name === 'JsonWebTokenError') ? 'Unauthorized' : err.message
-                return next(createError.Unauthorized(message))
+                return next(createError.Unauthorized("Token Invalid/Expired"))
             }
-            req.payload = payload
+            req.payload = payload.aud
             next()
         })
     }
