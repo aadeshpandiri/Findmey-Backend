@@ -7,7 +7,7 @@ const router = express.Router()
 router.post('/register', async (req, res, next) => {
     try {
         const authServiceObj = new AuthService();
-        const data = await authServiceObj.registerUser(req.body)
+        const data = await authServiceObj.registerUserTemp(req.body)
             .catch(err => {
                 throw err;
             });
@@ -22,6 +22,43 @@ router.post('/register', async (req, res, next) => {
         next(err)
     }
 })
+
+router.post('/sendOtp', async (req, res, next) => {
+    try {
+        const authServiceObj = new AuthService();
+        const data = await authServiceObj.sendOtp(req.body)
+            .catch(err => {
+                throw err;
+            });
+
+        res.send({
+            "status": 200,
+            "message": data
+        })
+    }
+    catch (err) {
+        next(err);
+    }
+})
+
+router.post('/verifyOtp', async (req, res, next) => {
+    try {
+        const authServiceObj = new AuthService();
+        const data = await authServiceObj.verifyOtp(req.body)
+            .catch(err => {
+                throw err;
+            });
+
+        res.send({
+            "status": 200,
+            "message": data
+        })
+    }
+    catch (err) {
+        next(err);
+    }
+})
+
 
 router.post('/login', async (req, res, next) => {
     try {

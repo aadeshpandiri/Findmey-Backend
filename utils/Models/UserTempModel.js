@@ -1,6 +1,6 @@
 const Sequelize = require('sequelize')
 
-const UserModel = global.DATA.CONNECTION.mysql.define("UserModel", {
+const UserTempModel = global.DATA.CONNECTION.mysql.define("UserTempModel", {
     id: {
         type: Sequelize.DataTypes.INTEGER,
         allowNull: false,
@@ -37,7 +37,7 @@ const UserModel = global.DATA.CONNECTION.mysql.define("UserModel", {
         allowNull: false
     }
 }, {
-    tableName: "users"
+    tableName: "temp_users"
 })
 
-module.exports = UserModel;
+module.exports = UserTempModel;

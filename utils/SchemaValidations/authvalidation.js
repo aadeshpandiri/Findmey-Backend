@@ -8,8 +8,8 @@ const loginSchema = Joi.object({
 const registerSchema = Joi.object({
     email: Joi.string().email().max(100).required(),
     password: Joi.string().min(8).max(10).required(),
-    confirm_password: Joi.ref('password'),
-    phone_number: Joi.string().min(10).max(13).required()
+    confirmPassword: Joi.ref('password'),
+    phoneNumber: Joi.string().min(10).max(13).required()
 })
 
 module.exports = {
