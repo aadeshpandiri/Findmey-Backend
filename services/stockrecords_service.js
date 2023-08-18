@@ -35,7 +35,7 @@ class StockRecordsService {
                 }
             }).catch(err => {
                 console.log("Error while getting investment", err.message);
-                throw err;
+                throw createError.InternalServerError(Constants.SQL_ERROR)
             })
             return data;
         }

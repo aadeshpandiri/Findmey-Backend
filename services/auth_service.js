@@ -74,7 +74,7 @@ class AuthService {
             const refreshToken = await this.jwtHelperObj.generateRefreshToken(tokenPayload);
 
             const data = {
-                accessToken, refreshToken
+                accessToken, refreshToken, "id": user.dataValues.id
             }
             return data
         }

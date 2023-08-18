@@ -3,6 +3,7 @@ const bodyParser = require('body-parser')
 const createError = require('http-errors')
 const Constants = require('./utils/Constants/response_messages')
 const IndexRoute = require('./routes/index')
+const cors = require('cors');
 
 class App {
     constructor() {
@@ -11,6 +12,9 @@ class App {
     }
 
     async intializeConfguration() {
+        this.app.use(cors({
+            origin: '*'
+        }))
         this.app.use(bodyParser.json());
         this.app.use(bodyParser.urlencoded({ extended: true }));
         this.app.get("/hello", async (req, res, next) => {
