@@ -2,6 +2,7 @@ module.exports = {
     SUCCESS: "Success",
     REGISTER_SUCCESS: "User Registered Successfully",
     LOGIN_SUCCESS: "User Logged in Successfully",
+    LOGOUT_SUCCESS: "User Logged out Successfully",
     ERROR: "Error",
     SQL_ERROR: "Error while fetching data/ writing data MySQL",
     JWT_SIGN_ERROR: "Error During JWT Token Generation",

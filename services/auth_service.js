@@ -223,6 +223,35 @@ class AuthService {
             throw err;
         }
     }
+
+    async generateNewAccessToken(refreshToken) {
+        try {
+            const userId = await this.jwtHelperObj.verifyRefreshToken(refreshToken);
+            const accessToken = await this.jwtHelperObj.generateAccessToken(userId);
+            const data = {
+                "accessToken": accessToken
+            }
+            return data
+        }
+        catch (err) {
+            throw err;
+        }
+    }
+
+    logout(userId) {
+        return new Promise((resolve, reject) => {
+            const keys = [userId, `access${userId}`]
+            DATA.CONNECTION.redis.DEL(keys)
+                .then(result => {
+                    console.log("redis delete refresh token", result)
+                    resolve(Constants.LOGOUT_SUCCESS)
+                })
+                .catch(err => {
+                    console.log(err.message)
+                    reject(createError.InternalServerError(Constants.REDIS_ERROR))
+                })
+        })
+    }
 }
 
 module.exports = AuthService

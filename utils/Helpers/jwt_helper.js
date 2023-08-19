@@ -12,7 +12,7 @@ class JwtHelper {
             const payload = {}
             const secret = process.env.ACCESS_TOKEN_SECRETKEY
             const options = {
-                expiresIn: '1h',
+                expiresIn: '2m',
                 issuer: 'findemy.com',
                 audience: tokenPayload,
             }
@@ -22,7 +22,16 @@ class JwtHelper {
                     reject(createError.InternalServerError(Constants.JWT_SIGN_ERROR))
                     return
                 }
-                resolve(token)
+                console.log(`access${tokenPayload}`)
+                global.DATA.CONNECTION.redis.SET(`access${tokenPayload}`, token)
+                    .then(() => {
+                        resolve(token)
+                    })
+                    .catch((err) => {
+                        console.log(err.message)
+                        reject(createError.InternalServerError(Constants.REDIS_ERROR))
+                        return
+                    })
             })
         })
     }
@@ -32,7 +41,7 @@ class JwtHelper {
             const payload = {}
             const secret = process.env.REFRESH_TOKEN_SECRETKEY
             const options = {
-                expiresIn: '1y',
+                expiresIn: '2m',
                 issuer: 'findemy.com',
                 audience: tokenPayload,
             }
@@ -57,9 +66,7 @@ class JwtHelper {
     }
 
     verifyAccessToken(req, res, next) {
-        console.log(req)
         if (!req.headers['authorization']) return next(createError.Unauthorized("Please provide token"))
-        console.log("Reached here")
         const authHeader = req.headers['authorization']
         const bearerToken = authHeader.split(' ')
         const token = bearerToken[1]
@@ -67,8 +74,44 @@ class JwtHelper {
             if (err) {
                 return next(createError.Unauthorized("Token Invalid/Expired"))
             }
-            req.payload = payload.aud
-            next()
+            const userId = payload.aud
+            console.log("Redis verify", `access${userId}`)
+            DATA.CONNECTION.redis.get(`access${userId}`)
+                .then(result => {
+                    if (result === token) {
+                        req.payload = userId;
+                        next()
+                    }
+                    else {
+                        next(createError.Unauthorized("Token Invalid/Expired"))
+                    }
+                })
+                .catch(err => {
+                    next(createError.Unauthorized("Token Invalid/Expired"))
+                })
+        })
+    }
+
+    verifyRefreshToken(refreshToken) {
+        return new Promise((resolve, reject) => {
+            JWT.verify(
+                refreshToken,
+                process.env.REFRESH_TOKEN_SECRETKEY,
+                (err, payload) => {
+                    if (err) return reject(createError.Unauthorized("Token Invalid/Expired"))
+                    const userId = payload.aud
+
+                    DATA.CONNECTION.redis.get(userId)
+                        .then(result => {
+                            if (refreshToken === result) return resolve(userId)
+                            reject(createError.Unauthorized("Token Invalid/Expired"))
+                        })
+                        .catch(err => {
+                            console.log("Error with redisclient get", err.mesasge);
+                            throw createError.InternalServerError(Constants.REDIS_ERROR)
+                        })
+                }
+            )
         })
     }
 }
