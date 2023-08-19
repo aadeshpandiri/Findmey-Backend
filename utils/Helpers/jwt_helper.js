@@ -87,7 +87,7 @@ class JwtHelper {
                     }
                 })
                 .catch(err => {
-                    next(createError.Unauthorized("Token Invalid/Expired"))
+                    throw createError.InternalServerError(Constants.REDIS_ERROR)
                 })
         })
     }
