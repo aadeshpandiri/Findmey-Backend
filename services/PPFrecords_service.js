@@ -99,6 +99,26 @@ class PPFRecordsService {
         }
     }
 
+    async getTotalPPFInvestment(payload){
+        try{
+            const data = await PPFRecordModel.findOne({
+                where: {
+                    uid: payload.uid
+                }
+            }).catch(err => {
+                console.log("Error during checking user", err.message)
+                throw createError.InternalServerError(SQL_ERROR)
+            })
+
+            if(!data){
+                return "No Investment Found, Current savings = 0";
+            }
+            return data;
+        }catch(err){
+            throw err;
+        }
+    }
+
 }
 
 module.exports = PPFRecordsService;

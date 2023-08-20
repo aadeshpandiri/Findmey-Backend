@@ -56,6 +56,30 @@ router.post('/removePPF', jwtHelperObj.verifyAccessToken, async (req, res, next)
     }
 })
 
+router.get('/getTotalPPF', jwtHelperObj.verifyAccessToken, async (req, res, next) => {
+    try {
+        const PPFRecordServiceObj = new PPFRecordsService();
+        const payload = {
+            "uid": parseInt(req.payload)
+        }
+        const data = await PPFRecordServiceObj.getTotalPPFInvestment(payload)
+            .catch(err => {
+                console.log("error", err.message);
+                throw err;
+            })
+
+        res.send({
+            "status": 201,
+            "message": Constants.SUCCESS,
+            "data": data
+        })
+    }
+    catch (err) {
+        if (err.isJoi === true) err.status = 400
+        next(err);
+    }
+})
+
 
 
 module.exports = router;

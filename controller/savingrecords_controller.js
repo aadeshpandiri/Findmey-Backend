@@ -57,5 +57,28 @@ router.post('/removeSavings', jwtHelperObj.verifyAccessToken, async (req, res, n
 })
 
 
+router.get('/getTotalSavings', jwtHelperObj.verifyAccessToken, async (req, res, next) => {
+    try {
+        const savingRecordServiceObj = new SavingRecordsService();
+        const payload = {
+            "uid": parseInt(req.payload)
+        }
+        const data = await savingRecordServiceObj.getTotalSavingsInvestment(payload)
+            .catch(err => {
+                console.log("error", err.message);
+                throw err;
+            })
+
+        res.send({
+            "status": 201,
+            "message": Constants.SUCCESS,
+            "data": data
+        })
+    }
+    catch (err) {
+        if (err.isJoi === true) err.status = 400
+        next(err);
+    }
+})
 
 module.exports = router;
