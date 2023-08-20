@@ -30,14 +30,6 @@ const StockRecordModel = global.DATA.CONNECTION.mysql.define("StockRecordModel",
     totalAmount: {
         type: Sequelize.FLOAT,
         allowNull: false
-    },
-    createdAt: {
-        type: Sequelize.DATE,
-        defaultValue: DATA.UTILS.currentTimeStamp()
-    },
-    modifiedAt: {
-        type: Sequelize.DATE,
-        defaultValue: DATA.UTILS.currentTimeStamp()
     }
 }, {
     tableName: "stock_records"

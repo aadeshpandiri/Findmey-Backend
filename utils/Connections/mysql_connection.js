@@ -15,7 +15,7 @@ class MySQLConnection {
                 dialect: 'mysql',
                 logging: false,
                 define: {
-                    timestamps: false
+                    timestamps: true
                 }
             };
             const sequelize = new Sequelize(

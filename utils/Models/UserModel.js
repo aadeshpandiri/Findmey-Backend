@@ -19,18 +19,10 @@ const UserModel = global.DATA.CONNECTION.mysql.define("UserModel", {
         type: Sequelize.STRING(100),
         allowNull: true
     },
-    createdAt: {
-        type: Sequelize.DATE,
-        defaultValue: DATA.UTILS.currentTimeStamp()
-    },
     isEmailVerified: {
         type: Sequelize.BOOLEAN,
         allowNull: true,
         defaultValue: false
-    },
-    modifiedAt: {
-        type: Sequelize.DATE,
-        defaultValue: DATA.UTILS.currentTimeStamp()
     },
     phoneNumber: {
         type: Sequelize.STRING(20),

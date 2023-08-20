@@ -1,5 +1,7 @@
 const { stockRecordSchema } = require('../utils/SchemaValidations/stockvalidation')
-const StockRecordsModel = require('../utils/Models/StockRecordsModel')
+const StockRecordsModel = require('../utils/Models/Stocks/StockRecordsModel')
+const StockHistoryModel = require('../utils/Models/Stocks/StockHistoryModel')
+const StockMergedModel = require('../utils/Models/Stocks/StockMergedModel')
 const createError = require('http-errors')
 const { SQL_ERROR } = require('../utils/Constants/response_messages')
 const { Sequelize } = require('sequelize')
@@ -13,12 +15,195 @@ class StockRecordsService {
     async saveStockRecord(payload) {
         try {
             const validateData = await stockRecordSchema.validateAsync(payload)
-            const data = await StockRecordsModel.create(validateData)
-                .catch(err => {
-                    console.log("Error during creation", err.message);
-                    throw createError.InternalServerError(SQL_ERROR);
+            console.log("Validated Data", validateData);
+
+            return await DATA.CONNECTION.mysql.transaction(async (t) => {
+
+                const response = await StockHistoryModel.create(validateData, {
+                    transaction: t
+                }).catch(err => {
+                    console.log("Error while saving in history table", err.message);
+                    throw createError.InternalServerError(SQL_ERROR)
                 })
-            return data;
+
+                console.log("Saved in History table")
+
+                await StockRecordsModel.create(validateData, {
+                    transaction: t
+                }).catch(err => {
+                    console.log("Error while saving in stock records table", err.message);
+                    throw createError.InternalServerError(SQL_ERROR)
+                })
+                console.log("Saved in Stock records table")
+
+                let data = await StockMergedModel.findOne({
+                    where: {
+                        uid: validateData.uid,
+                        stockSymbol: validateData.stockSymbol
+                    },
+                    transaction: t
+                }).catch(err => {
+                    console.log("Error while finding record in merged model", err.message);
+                    throw createError.InternalServerError(SQL_ERROR)
+                })
+
+                if (!data) {
+                    console.log('Newly adding in merged table')
+                    data = await StockMergedModel.create(validateData, {
+                        transaction: t
+                    }).catch(err => {
+                        console.log("Error while saving in merged table", err.message);
+                        throw createError.InternalServerError(SQL_ERROR)
+                    })
+                }
+                else {
+                    const updatedData = {
+                        ...validateData,
+                        numberOfShares: data.numberOfShares + validateData.numberOfShares,
+                        totalAmount: data.totalAmount + validateData.totalAmount,
+                        perSharePrice: (data.totalAmount + validateData.totalAmount) / (data.numberOfShares + validateData.numberOfShares)
+                    }
+
+                    await StockMergedModel.update(updatedData, {
+                        where: {
+                            uid: validateData.uid,
+                            stockSymbol: validateData.stockSymbol
+                        },
+                        transaction: t
+                    }).catch(err => {
+                        console.log("Error while updating in merged table", err.message);
+                        throw err;
+                    })
+                }
+
+                console.log("Transaction Completed")
+
+                return response;
+            })
+
+        }
+        catch (err) {
+            throw err;
+        }
+    }
+
+    async editStockRecord(payload) {
+        try {
+            const validateData = await stockRecordSchema.validateAsync(payload)
+            console.log("Validated Data", validateData);
+
+            return await DATA.CONNECTION.mysql.transaction(async (t) => {
+
+                const deleteRecord = await StockMergedModel.findOne({
+                    where: {
+                        uid: validateData.uid,
+                        stockSymbol: validateData.stockSymbol
+                    },
+                    transaction: t
+                }).catch(err => {
+                    console.log("Error while finding in merged table", err.message);
+                    throw createError.InternalServerError(SQL_ERROR)
+                })
+
+                await StockMergedModel.destroy({
+                    where: {
+                        uid: validateData.uid,
+                        stockSymbol: validateData.stockSymbol
+                    },
+                    transaction: t
+                }).catch(err => {
+                    console.log("Error while deleting from merged table", err.message);
+                    throw createError.InternalServerError(SQL_ERROR)
+                })
+                const historyPayload = {
+                    uid: deleteRecord.uid,
+                    stockSymbol: deleteRecord.stockSymbol,
+                    stockName: deleteRecord.stockName,
+                    totalAmount: -1 * (deleteRecord.totalAmount),
+                    numberOfShares: -1 * (deleteRecord.numberOfShares),
+                    perSharePrice: -1 * (deleteRecord.perSharePrice)
+                }
+
+                await StockHistoryModel.create(historyPayload, {
+                    transaction: t
+                }).catch(err => {
+                    console.log("Error while adding deleted record to history table", err.message);
+                    throw createError.InternalServerError(SQL_ERROR)
+                })
+                console.log("Added in history table");
+
+                await StockRecordsModel.destroy({
+                    where: {
+                        uid: validateData.uid,
+                        stockSymbol: validateData.stockSymbol
+                    },
+                    transaction: t
+                }).catch(err => {
+                    console.log("Error while deleting from records table", err.message);
+                    throw createError.InternalServerError(SQL_ERROR)
+                });
+
+                const response = await StockHistoryModel.create(validateData, {
+                    transaction: t
+                }).catch(err => {
+                    console.log("Error while saving in history table", err.message);
+                    throw createError.InternalServerError(SQL_ERROR)
+                })
+
+                console.log("Saved in History table")
+
+                await StockRecordsModel.create(validateData, {
+                    transaction: t
+                }).catch(err => {
+                    console.log("Error while saving in stock records table", err.message);
+                    throw createError.InternalServerError(SQL_ERROR)
+                })
+                console.log("Saved in Stock records table")
+
+                let data = await StockMergedModel.findOne({
+                    where: {
+                        uid: validateData.uid,
+                        stockSymbol: validateData.stockSymbol
+                    },
+                    transaction: t
+                }).catch(err => {
+                    console.log("Error while finding record in merged model", err.message);
+                    throw createError.InternalServerError(SQL_ERROR)
+                })
+
+                if (!data) {
+                    console.log('Newly adding in merged table')
+                    data = await StockMergedModel.create(validateData, {
+                        transaction: t
+                    }).catch(err => {
+                        console.log("Error while saving in merged table", err.message);
+                        throw createError.InternalServerError(SQL_ERROR)
+                    })
+                }
+                else {
+                    const updatedData = {
+                        ...validateData,
+                        numberOfShares: data.numberOfShares + validateData.numberOfShares,
+                        totalAmount: data.totalAmount + validateData.totalAmount,
+                        perSharePrice: (data.totalAmount + validateData.totalAmount) / (data.numberOfShares + validateData.numberOfShares)
+                    }
+
+                    await StockMergedModel.update(updatedData, {
+                        where: {
+                            uid: validateData.uid,
+                            stockSymbol: validateData.stockSymbol
+                        },
+                        transaction: t
+                    }).catch(err => {
+                        console.log("Error while updating in merged table", err.message);
+                        throw err;
+                    })
+                }
+
+                console.log("Transaction Completed")
+
+                return response;
+            })
         }
         catch (err) {
             throw err;
@@ -80,6 +265,7 @@ class StockRecordsService {
             resolve(stockValueData)
         })
     }
+
     async viewStocks(payload) {
         try {
             const stockList = await DATA.CONNECTION.mysql.query(`select stockSymbol, sum(numberOfShares) as totalShares, sum(totalAmount) as mergedAmount from stock_records where uid = :uid group by stockSymbol`, {

@@ -46,7 +46,8 @@ class AuthService {
                     email: validPayload.email,
                     password: hashedPassword,
                     phoneNumber: validPayload.phoneNumber,
-                    isEmailVerified: 0
+                    isEmailVerified: 0,
+                    fullName: validPayload.fullName
                 }
                 const newUser = await UserTempModel.create(userPayload).catch(err => {
                     console.log("Error while adding in temptable", err.message);
