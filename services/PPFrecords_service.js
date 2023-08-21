@@ -42,7 +42,10 @@ class PPFRecordsService {
                 where: {
                     uid: validateData.uid
                 }
-            });
+            }).catch(err => {
+                console.log("Error while update", err.message);
+                throw createError.InternalServerError(SQL_ERROR);
+            })
 
             const searchData = await PPFRecordModel.findOne({
                 where: {
@@ -90,7 +93,10 @@ class PPFRecordsService {
                 where: {
                     uid: validateData.uid
                 }
-            });
+            }).catch(err => {
+                console.log("Error while update", err.message);
+                throw createError.InternalServerError(SQL_ERROR);
+            })
 
             const searchData = await PPFRecordModel.findOne({
                 where: {
