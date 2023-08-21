@@ -214,7 +214,7 @@ class StockRecordsService {
         try {
             const uid = payload;
             console.log(uid)
-            const data = await StockRecordsModel.findAll({
+            const data = await StockHistoryModel.findAll({
                 where: {
                     uid: uid
                 }
@@ -231,15 +231,15 @@ class StockRecordsService {
 
     async getStockValue(stockList) {
         return new Promise(async (resolve, reject) => {
-            const stockValueData = [];
+            const stockValueData = []
             const nameList = [];
             const totalStocksList = []
             const totalInvestedAmount = []
 
             for (var i = 0; i < stockList.length; i++) {
                 nameList.push(stockList[i].stockSymbol);
-                totalStocksList.push(stockList[i].totalShares);
-                totalInvestedAmount.push(stockList[i].mergedAmount)
+                totalStocksList.push(stockList[i].numberOfShares);
+                totalInvestedAmount.push(stockList[i].totalAmount)
             }
 
             for (var i = 0; i < nameList.length; i++) {
@@ -268,16 +268,17 @@ class StockRecordsService {
 
     async viewStocks(payload) {
         try {
-            const stockList = await DATA.CONNECTION.mysql.query(`select stockSymbol, sum(numberOfShares) as totalShares, sum(totalAmount) as mergedAmount from stock_records where uid = :uid group by stockSymbol`, {
-                replacements: {
+            const response = await StockMergedModel.findAll({
+                where: {
                     uid: payload
-                },
-                type: Sequelize.QueryTypes.SELECT
+                }
             }).catch(err => {
-                console.log(err);
-                throw err;
+                console.log("Error while fetching data", err.message);
+                throw createError.InternalServerError(SQL_ERROR);
             })
-            const data = await this.getStockValue(stockList)
+
+            const data = await this.getStockValue(response);
+            console.log("View stocks result", data);
             return data;
         }
         catch (err) {
