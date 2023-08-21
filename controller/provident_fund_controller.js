@@ -1,14 +1,14 @@
 const express = require('express')
 const JwtHelper = require('../utils/Helpers/jwt_helper')
 const Constants = require('../utils/Constants/response_messages');
-const PPFRecordsService = require('../services/ppfrecords_service');
+const ProvidentFundService = require('../services/provident_fund_service')
 
 const router = express.Router()
 const jwtHelperObj = new JwtHelper();
 
 router.post('/addPPF', jwtHelperObj.verifyAccessToken, async (req, res, next) => {
     try {
-        const PPFRecordServiceObj = new PPFRecordsService();
+        const PPFRecordServiceObj = new ProvidentFundService();
         const payload = {
             ...req.body,
             "uid": parseInt(req.payload)
@@ -33,7 +33,7 @@ router.post('/addPPF', jwtHelperObj.verifyAccessToken, async (req, res, next) =>
 
 router.post('/removePPF', jwtHelperObj.verifyAccessToken, async (req, res, next) => {
     try {
-        const PPFRecordServiceObj = new PPFRecordsService();
+        const PPFRecordServiceObj = new ProvidentFundService();
         const payload = {
             ...req.body,
             "uid": parseInt(req.payload)
@@ -58,7 +58,7 @@ router.post('/removePPF', jwtHelperObj.verifyAccessToken, async (req, res, next)
 
 router.get('/getTotalPPF', jwtHelperObj.verifyAccessToken, async (req, res, next) => {
     try {
-        const PPFRecordServiceObj = new PPFRecordsService();
+        const PPFRecordServiceObj = new ProvidentFundService();
         const payload = {
             "uid": parseInt(req.payload)
         }

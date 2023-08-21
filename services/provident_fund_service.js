@@ -1,11 +1,9 @@
 const createError = require('http-errors')
 const { SQL_ERROR } = require('../utils/Constants/response_messages')
-const { Sequelize } = require('sequelize')
-const axios = require('axios');
 const { PPFRecordSchema } = require('../utils/SchemaValidations/PPFvalidation')
 const PPFRecordModel = require('../utils/Models/PPF/PPFRecordsModel')
 
-class PPFRecordsService {
+class ProvidentFundService {
     constructor() {
 
     }
@@ -135,4 +133,4 @@ class PPFRecordsService {
 
 }
 
-module.exports = PPFRecordsService;
+module.exports = ProvidentFundService;
