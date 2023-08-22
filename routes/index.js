@@ -4,6 +4,7 @@ const SavingsController = require('../controller/savingrecords_controller')
 const ProvidentFundController = require('../controller/provident_fund_controller')
 const MutualFundsController = require('../controller/mutual_fund_controller')
 const GoldController = require('../controller/goldrecords_controller')
+const CustomTrackerController = require('../controller/custom_tracker_controller')
 
 class IndexRoute {
     constructor(expressApp) {
@@ -17,6 +18,7 @@ class IndexRoute {
         this.app.use('/ppf', ProvidentFundController)
         this.app.use('/gold', GoldController)
         this.app.use('/mutualFunds', MutualFundsController)
+        this.app.use('/customTracker', CustomTrackerController)
     }
 }
 
