@@ -95,4 +95,27 @@ router.get('/viewMutualFunds', jwtHelperObj.verifyAccessToken, async (req, res, 
         next(err);
     }
 })
+
+router.delete('/deleteMutualFunds', jwtHelperObj.verifyAccessToken, async (req, res, next) => {
+    try {
+        const mutualFundObj = new MutualFundService()
+        const payload = {
+            ...req.body,
+            "uid": parseInt(req.payload)
+        }
+        const data = await mutualFundObj.removeMutualFund(payload)
+            .catch(err => {
+                console.log("Error occured", err.message);
+                throw err;
+            })
+        res.send({
+            "status": 200,
+            "message": Constants.SUCCESS,
+            "data": data
+        })
+    }
+    catch (err) {
+        next(err);
+    }
+})
 module.exports = router;

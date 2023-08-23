@@ -289,6 +289,70 @@ class StockRecordsService {
             throw err;
         }
     }
+
+    async removeStock(payload) {
+        try {
+            const deleteRecord = await StockMergedModel.findOne({
+                where: {
+                    uid: payload.uid,
+                    stockSymbol: payload.stockSymbol
+                }
+            }).catch(err => {
+                console.log("Error while fetching from merged model", err.message);
+                throw createError.InternalServerError(SQL_ERROR)
+            })
+
+            if (!deleteRecord) {
+                throw createError.NotFound("Stocks Not Found")
+            }
+
+            return await DATA.CONNECTION.mysql.transaction(async (t) => {
+
+                // Delete from merged table
+                await StockMergedModel.destroy({
+                    where: {
+                        uid: payload.uid,
+                        stockSymbol: payload.stockSymbol
+                    }
+                }).catch(err => {
+                    console.log("Error while deleting from merged model", err.message);
+                    throw createError.InternalServerError(SQL_ERROR)
+                })
+
+                await StockRecordsModel.destroy({
+                    where: {
+                        uid: payload.uid,
+                        stockSymbol: payload.stockSymbol
+                    }
+                }).catch(err => {
+                    console.log("Error while deleting from stocks model", err.message);
+                    throw createError.InternalServerError(SQL_ERROR)
+                })
+
+                const historyPayload = {
+                    uid: deleteRecord.uid,
+                    stockSymbol: deleteRecord.stockSymbol,
+                    stockName: deleteRecord.stockName,
+                    totalAmount: -1 * (deleteRecord.totalAmount),
+                    numberOfShares: -1 * (deleteRecord.numberOfShares),
+                    perSharePrice: -1 * (deleteRecord.perSharePrice)
+                }
+
+                await StockHistoryModel.create(historyPayload, {
+                    transaction: t
+                }).catch(err => {
+                    console.log("Error while adding deleted record to history table", err.message);
+                    throw createError.InternalServerError(SQL_ERROR)
+                })
+                console.log("Added in history table");
+
+                return "DELETION SUCCESSFULL"
+            })
+        }
+        catch (err) {
+            throw err;
+        }
+    }
 }
 
 module.exports = StockRecordsService;

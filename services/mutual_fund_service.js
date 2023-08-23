@@ -261,5 +261,71 @@ class MutualFundService {
             throw err;
         }
     }
+
+    async removeMutualFund(payload) {
+        try {
+            const validateData = payload;
+
+            const deleteRecord = await MutualFundsMergedModel.findOne({
+                where: {
+                    uid: validateData.uid,
+                    schemeCode: validateData.schemeCode
+                }
+            }).catch(err => {
+                console.log("Error while fetching from merged model", err.message);
+                throw createError.InternalServerError(SQL_ERROR)
+            })
+
+            if (!deleteRecord) {
+                throw createError.NotFound("Mutual Fund Not Found")
+            }
+
+            return await DATA.CONNECTION.mysql.transaction(async (t) => {
+
+                // Delete from merged table
+                await MutualFundsMergedModel.destroy({
+                    where: {
+                        uid: validateData.uid,
+                        schemeCode: validateData.schemeCode
+                    }
+                }).catch(err => {
+                    console.log("Error while deleting from merged model", err.message);
+                    throw createError.InternalServerError(SQL_ERROR)
+                })
+
+                await MutualFundsModel.destroy({
+                    where: {
+                        uid: validateData.uid,
+                        schemeCode: validateData.schemeCode
+                    }
+                }).catch(err => {
+                    console.log("Error while deleting from stocks model", err.message);
+                    throw createError.InternalServerError(SQL_ERROR)
+                })
+
+                const historyPayload = {
+                    uid: deleteRecord.uid,
+                    schemeCode: deleteRecord.schemeCode,
+                    schemeName: deleteRecord.schemeName,
+                    totalAmount: -1 * (deleteRecord.totalAmount),
+                    numberOfShares: -1 * (deleteRecord.numberOfShares),
+                    perSharePrice: -1 * (deleteRecord.perSharePrice)
+                }
+
+                await MutualFundsHistoryModel.create(historyPayload, {
+                    transaction: t
+                }).catch(err => {
+                    console.log("Error while adding to history table", err.message);
+                    throw createError.InternalServerError(SQL_ERROR)
+                })
+                console.log("Added in history table")
+
+                return "DELETION SUCCESSFULL"
+            })
+        }
+        catch (err) {
+            throw err;
+        }
+    }
 }
 module.exports = MutualFundService;

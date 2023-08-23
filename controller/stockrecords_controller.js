@@ -95,5 +95,28 @@ router.get('/viewStocks', jwtHelperObj.verifyAccessToken, async (req, res, next)
     }
 })
 
+router.delete('/deleteStock', jwtHelperObj.verifyAccessToken, async (req, res, next) => {
+    try {
+        const stockRecordServiceObj = new StockRecordsService()
+        const payload = {
+            ...req.body,
+            "uid": parseInt(req.payload)
+        }
+        const data = await stockRecordServiceObj.removeStock(payload)
+            .catch(err => {
+                console.log("Error occured", err.message);
+                throw err;
+            })
+        res.send({
+            "status": 200,
+            "message": Constants.SUCCESS,
+            "data": data
+        })
+    }
+    catch (err) {
+        next(err);
+    }
+})
+
 
 module.exports = router;
