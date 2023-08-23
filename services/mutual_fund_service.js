@@ -113,7 +113,8 @@ class MutualFundService {
                     schemeName: nameList[i],
                     schemeCode: idList[i],
                     currentTotalValue: currentValue,
-                    totalInvestedAmount: totalInvestedAmount[i]
+                    totalInvestedAmount: totalInvestedAmount[i],
+                    numberOfShares: totalStocksList[i]
                 })
 
             }

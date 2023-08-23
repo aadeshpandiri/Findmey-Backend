@@ -259,7 +259,8 @@ class StockRecordsService {
                 stockValueData.push({
                     "stockSymbol": nameList[i],
                     "currentTotalValue": currentValue,
-                    "totalInvestedAmount": totalInvestedAmount[i]
+                    "totalInvestedAmount": totalInvestedAmount[i],
+                    "numberOfShares": totalStocksList[i]
                 })
             }
             resolve(stockValueData)
