@@ -235,15 +235,17 @@ class StockRecordsService {
             const nameList = [];
             const totalStocksList = []
             const totalInvestedAmount = []
+            const stockSymbol = []
 
             for (var i = 0; i < stockList.length; i++) {
-                nameList.push(stockList[i].stockSymbol);
+                stockSymbol.push(stockList[i].stockSymbol);
                 totalStocksList.push(stockList[i].numberOfShares);
                 totalInvestedAmount.push(stockList[i].totalAmount)
+                nameList.push(stockList[i].stockName)
             }
 
             for (var i = 0; i < nameList.length; i++) {
-                const name = nameList[i];
+                const name = stockSymbol[i];
                 const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${name}&apikey=${process.env.ACCESS_KEY_ALPHAVANTAGE}`;
 
                 console.log("URL", url)
@@ -257,7 +259,8 @@ class StockRecordsService {
                 const currentValue = currentPrice * totalStocksList[i];
 
                 stockValueData.push({
-                    "stockSymbol": nameList[i],
+                    "stockSymbol": stockSymbol[i],
+                    "stockName": nameList[i],
                     "currentTotalValue": currentValue,
                     "totalInvestedAmount": totalInvestedAmount[i],
                     "numberOfShares": totalStocksList[i]
