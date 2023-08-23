@@ -12,7 +12,7 @@ class JwtHelper {
             const payload = {}
             const secret = process.env.ACCESS_TOKEN_SECRETKEY
             const options = {
-                expiresIn: '10m',
+                expiresIn: '2m',
                 issuer: 'findemy.com',
                 audience: tokenPayload,
             }
@@ -41,7 +41,7 @@ class JwtHelper {
             const payload = {}
             const secret = process.env.REFRESH_TOKEN_SECRETKEY
             const options = {
-                expiresIn: '30m',
+                expiresIn: '5m',
                 issuer: 'findemy.com',
                 audience: tokenPayload,
             }
