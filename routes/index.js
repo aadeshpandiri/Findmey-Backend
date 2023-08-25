@@ -6,6 +6,7 @@ const MutualFundsController = require('../controller/mutual_fund_controller')
 const GoldController = require('../controller/goldrecords_controller')
 const BondController = require('../controller/bondrecords_controller')
 const CustomTrackerController = require('../controller/custom_tracker_controller')
+const DashboardController = require('../controller/dashboard_controller')
 
 class IndexRoute {
     constructor(expressApp) {
@@ -21,6 +22,7 @@ class IndexRoute {
         this.app.use('/mutualFunds', MutualFundsController)
         this.app.use('/bond', BondController)
         this.app.use('/customTracker', CustomTrackerController)
+        this.app.use('/dashboard', DashboardController)
     }
 }
 
