@@ -6,14 +6,14 @@ const GoldRecordsService = require('../services/goldrecords_service');
 const router = express.Router()
 const jwtHelperObj = new JwtHelper();
 
-router.post('/saveGold', jwtHelperObj.verifyAccessToken, async (req, res, next) => {
+router.post('/addGold', jwtHelperObj.verifyAccessToken, async (req, res, next) => {
     try {
         const goldRecordServiceObj = new GoldRecordsService();
         const payload = {
             ...req.body,
             "uid": parseInt(req.payload)
         }
-        const data = await goldRecordServiceObj.saveGoldRecord(payload)
+        const data = await goldRecordServiceObj.addgoldInvestment(payload)
             .catch(err => {
                 console.log("error", err.message);
                 throw err;
@@ -31,14 +31,14 @@ router.post('/saveGold', jwtHelperObj.verifyAccessToken, async (req, res, next) 
     }
 })
 
-router.post('/editGold', jwtHelperObj.verifyAccessToken, async (req, res, next) => {
+router.post('/removeGold', jwtHelperObj.verifyAccessToken, async (req, res, next) => {
     try {
         const goldRecordServiceObj = new GoldRecordsService();
         const payload = {
             ...req.body,
             "uid": parseInt(req.payload)
         }
-        const data = await goldRecordServiceObj.editGoldRecord(payload)
+        const data = await goldRecordServiceObj.removegoldInvestment(payload)
             .catch(err => {
                 console.log("error", err.message);
                 throw err;
@@ -56,41 +56,27 @@ router.post('/editGold', jwtHelperObj.verifyAccessToken, async (req, res, next) 
     }
 })
 
-router.get('/getGoldInvestmentHistory', jwtHelperObj.verifyAccessToken, async (req, res, next) => {
-    try {
-        const goldRecordServiceObj = new GoldRecordsService()
-        const userId = parseInt(req.payload);
-        const data = await goldRecordServiceObj.getGoldInvestmentHistory(userId)
-            .catch(err => {
-                throw err;
-            })
-        res.send({
-            "status": 200,
-            "message": Constants.SUCCESS,
-            "data": data
-        })
-    }
-    catch (err) {
-        next(err);
-    }
-})
 
-router.get('/viewGoldInvestment', jwtHelperObj.verifyAccessToken, async (req, res, next) => {
+router.get('/getTotalGoldInvestmentPrice', jwtHelperObj.verifyAccessToken, async (req, res, next) => {
     try {
-        const goldRecordServiceObj = new GoldRecordsService()
-        const userId = parseInt(req.payload);
-        const data = await goldRecordServiceObj.viewGoldInvestment(userId)
+        const goldRecordServiceObj = new GoldRecordsService();
+        const payload = {
+            "uid": parseInt(req.payload)
+        }
+        const data = await goldRecordServiceObj.getTotalGoldInvestment(payload)
             .catch(err => {
-                console.log("Error occured", err.message);
+                console.log("error", err.message);
                 throw err;
             })
+
         res.send({
-            "status": 200,
+            "status": 201,
             "message": Constants.SUCCESS,
             "data": data
         })
     }
     catch (err) {
+        if (err.isJoi === true) err.status = 400
         next(err);
     }
 })

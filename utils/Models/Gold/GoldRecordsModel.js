@@ -22,6 +22,10 @@ const GoldRecordModel = global.DATA.CONNECTION.mysql.define("GoldRecordModel", {
     totalAmount: {
         type: Sequelize.FLOAT,
         allowNull: false
+    },
+    investedAmount: {
+        type: Sequelize.INTEGER,
+        allowNull: true
     }
 }, {
     tableName: "gold_records"
