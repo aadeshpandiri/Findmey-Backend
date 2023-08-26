@@ -128,7 +128,34 @@ class DashboardService {
 
     getCustomTrackerDetails(data) {
         return new Promise((resolve, reject) => {
+            const response = [];
+            for (var i = 0; i < data.length; i++) {
+                let currentRecord = {
+                    "img": data[i].trackerName,
+                    "id": data[i].id,
+                    "name": data[i].trackerName,
+                    "label": data[i].trackerName,
+                    "values": data[0].investedAmount,
+                    "currentValues": data[0].currentValue,
+                    "percentage": ((data[0].currentValue - data[0].investedAmount) / data[0].investedAmount) * 100
+                }
+                response.push(currentRecord)
+            }
+            resolve(response);
+        })
+    }
 
+    getGoldDetails(data) {
+        return new Promise((resolve, reject) => {
+            const response = {
+                "img": "Gold",
+                "name": "Gold",
+                "label": "Gold",
+                "values": data[0].investedAmount,
+                "currentValues": data[0].totalAmount,
+                "percentage": "NaN"
+            }
+            resolve(response)
         })
     }
 
@@ -204,6 +231,7 @@ class DashboardService {
                 console.log("Savings Data Calculates", savingsDataDetails)
                 response.push(savingsDataDetails)
 
+                // PPF
                 const ppfData = await DATA.CONNECTION.mysql.query(`select sum(ppfAmount) as totalAmount from ppf_records where uid =:uid`, {
                     type: Sequelize.QueryTypes.SELECT,
                     transaction: t,
@@ -218,6 +246,40 @@ class DashboardService {
                 const ppfDetails = await this.getPPFDetails(ppfData)
                 console.log("PPF Data Calculates", ppfDetails)
                 response.push(ppfDetails)
+
+                // Custom Trackers
+                const customTrackerData = await DATA.CONNECTION.mysql.query(`select id, trackerName, investedAmount, currentValue from custom_trackers where uid =:uid`, {
+                    type: Sequelize.QueryTypes.SELECT,
+                    transaction: t,
+                    replacements: {
+                        uid: userId
+                    }
+                }).catch(err => {
+                    console.log("Error with Custom trackers Data query", err.message);
+                    throw createError.InternalServerError(SQL_ERROR)
+                })
+                console.log("Custom Tracker Data", customTrackerData)
+                const customTrackerDetails = await this.getCustomTrackerDetails(customTrackerData)
+                console.log("Custom Tracker Data Calculates", customTrackerDetails)
+                for (var j = 0; j < customTrackerDetails.length; j++) {
+                    response.push(customTrackerDetails[j])
+                }
+
+                // Gold Data
+                const goldData = await DATA.CONNECTION.mysql.query(`select totalAmount, investedAmount from gold_records where uid =:uid`, {
+                    type: Sequelize.QueryTypes.SELECT,
+                    transaction: t,
+                    replacements: {
+                        uid: userId
+                    }
+                }).catch(err => {
+                    console.log("Error with Gold Data query", err.message);
+                    throw createError.InternalServerError(SQL_ERROR)
+                })
+                console.log("Gold Data", goldData)
+                const goldDataDetails = await this.getGoldDetails(goldData)
+                console.log("Custom Tracker Data Calculates", goldDataDetails)
+                response.push(goldDataDetails)
 
                 return response;
             })
