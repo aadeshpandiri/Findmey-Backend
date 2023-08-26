@@ -42,6 +42,41 @@ class DashboardService {
         })
     }
 
+    async getStocksDetailsConcurrent(data) {
+        return new Promise(async (resolve, reject) => {
+            let totalStockValue = 0;
+            let totalCurrentValue = 0;
+            const promises = data.map(async (item) => {
+                const name = item.stockSymbol;
+                const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${name}&apikey=${process.env.ACCESS_KEY_ALPHAVANTAGE}`;
+                console.log("URL", url);
+                return axios.get(url).then(response => {
+                    const resdata = response.data;
+                    const currentPrice = resdata["Global Quote"]["05. price"];
+                    const currentValue = currentPrice * item.totalShares;
+                    return { currentValue, totalAmount: item.totalAmount };
+                });
+            });
+            const promiseResult = await Promise.all(promises);
+            console.log("Promise Result", promiseResult)
+
+            for (var z = 0; z < promiseResult.length; z++) {
+                totalStockValue = totalStockValue + promiseResult[z].totalAmount;
+                totalCurrentValue = totalCurrentValue + promiseResult[z].currentValue
+            }
+
+            const response = {
+                "img": "Stocks",
+                "name": "Stocks",
+                "label": "Stocks",
+                "values": totalStockValue,
+                "currentValues": totalCurrentValue,
+                "percentage": ((totalCurrentValue - totalStockValue) / totalStockValue) * 100
+            };
+            resolve(response)
+        });
+    }
+
     getMutualFundDetails(data) {
         return new Promise(async (resolve, reject) => {
             let totalFundsValue = 0;
@@ -64,6 +99,42 @@ class DashboardService {
                 totalCurrentValue = totalCurrentValue + currentValue
                 console.log(data[i].totalAmount + "-" + name + "-" + totalCurrentValue)
             }
+            const response = {
+                "img": "Funds",
+                "name": "Mutual Funds",
+                "label": "Mutual Funds",
+                "values": totalFundsValue,
+                "currentValues": totalCurrentValue,
+                "percentage": ((totalCurrentValue - totalFundsValue) / totalFundsValue) * 100
+            }
+            resolve(response)
+        })
+    }
+
+    async getMutualFundDetailsConcurrent(data) {
+        return new Promise(async (resolve, reject) => {
+            let totalFundsValue = 0;
+            let totalCurrentValue = 0;
+            const promises = data.map(async (item) => {
+                const name = item.schemeCode;
+                const url = `https://api.mfapi.in/mf/${name}`;
+                console.log("URL", url);
+
+                return axios.get(url).then(response => {
+                    const resdata = response.data;
+                    const currentPrice = resdata["data"][0]["nav"];
+                    const currentValue = currentPrice * data[i].totalShares;
+                    return { currentValue, totalAmount: item.totalAmount };
+                });
+            });
+            const promiseResult = await Promise.all(promises);
+            console.log("Promise Result", promiseResult)
+
+            for (var z = 0; z < promiseResult.length; z++) {
+                totalFundsValue = totalFundsValue + promiseResult[z].totalAmount;
+                totalCurrentValue = totalCurrentValue + promiseResult[z].currentValue
+            }
+
             const response = {
                 "img": "Funds",
                 "name": "Mutual Funds",
@@ -176,7 +247,7 @@ class DashboardService {
                     throw createError.InternalServerError(SQL_ERROR)
                 })
                 console.log("Stock Data", stockData)
-                const stockDetails = await this.getStocksDetails(stockData)
+                const stockDetails = await this.getStocksDetailsConcurrent(stockData)
                 console.log("Stock Calculated Details", stockDetails)
                 response.push(stockDetails)
 
@@ -193,7 +264,7 @@ class DashboardService {
                 })
 
                 console.log("Funds Data", fundsData)
-                const mutualFundsDetails = await this.getMutualFundDetails(fundsData)
+                const mutualFundsDetails = await this.getMutualFundDetailsConcurrent(fundsData)
                 console.log("Funds Calculated Details", mutualFundsDetails)
                 response.push(mutualFundsDetails)
 

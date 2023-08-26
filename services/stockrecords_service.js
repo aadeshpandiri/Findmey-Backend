@@ -270,6 +270,59 @@ class StockRecordsService {
         })
     }
 
+    async getStockValueConcurrent(stockList) {
+        const nameList = [];
+        const totalStocksList = []
+        const totalInvestedAmount = []
+        const stockSymbol = []
+
+        for (var i = 0; i < stockList.length; i++) {
+            stockSymbol.push(stockList[i].stockSymbol);
+            totalStocksList.push(stockList[i].numberOfShares);
+            totalInvestedAmount.push(stockList[i].totalAmount)
+            nameList.push(stockList[i].stockName)
+        }
+
+        const promiseArray = [];
+        for (var i = 0; i < nameList.length; i++) {
+            const name = stockSymbol[i];
+            const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${name}&apikey=${process.env.ACCESS_KEY_ALPHAVANTAGE}`;
+            console.log("URL", url);
+
+            const stockSymbolValue = stockSymbol[i];
+            const nameListValue = nameList[i];
+            const totalStocksValue = totalStocksList[i];
+            const totalInvestedValue = totalInvestedAmount[i];
+
+            const promise = axios.get(url)
+                .then(response => {
+                    const data = response.data;
+                    const currentPrice = data["Global Quote"]["05. price"];
+                    const currentValue = currentPrice * totalStocksValue;
+
+                    return {
+                        "stockSymbol": stockSymbolValue,
+                        "stockName": nameListValue,
+                        "currentTotalValue": currentValue,
+                        "totalInvestedAmount": totalInvestedValue,
+                        "numberOfShares": totalStocksValue
+                    };
+                })
+                .catch(err => {
+                    throw createError.InternalServerError(SQL_ERROR);
+                });
+
+            promiseArray.push(promise);
+        }
+
+        const stockValueData = await Promise.all(promiseArray).catch(err => {
+            console.log("error", err.message);
+            throw err;
+        })
+        return stockValueData;
+
+    }
+
     async viewStocks(payload) {
         try {
             const response = await StockMergedModel.findAll({
@@ -281,7 +334,7 @@ class StockRecordsService {
                 throw createError.InternalServerError(SQL_ERROR);
             })
 
-            const data = await this.getStockValue(response);
+            const data = await this.getStockValueConcurrent(response);
             console.log("View stocks result", data);
             return data;
         }
