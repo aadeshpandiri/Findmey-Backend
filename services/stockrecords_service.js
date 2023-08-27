@@ -270,57 +270,75 @@ class StockRecordsService {
         })
     }
 
-    async getStockValueConcurrent(stockList) {
-        const nameList = [];
-        const totalStocksList = []
-        const totalInvestedAmount = []
-        const stockSymbol = []
-
-        for (var i = 0; i < stockList.length; i++) {
-            stockSymbol.push(stockList[i].stockSymbol);
-            totalStocksList.push(stockList[i].numberOfShares);
-            totalInvestedAmount.push(stockList[i].totalAmount)
-            nameList.push(stockList[i].stockName)
-        }
-
+    async getStockValueConcurrent(stockList, userId) {
+        console.log(stockList[0].dataValues)
         const promiseArray = [];
-        for (var i = 0; i < nameList.length; i++) {
-            const name = stockSymbol[i];
+        const existingArray = [];
+        for (var i = 0; i < stockList.length; i++) {
+            const name = stockList[i].dataValues.stockSymbol;
+            console.log(name);
             const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${name}&apikey=${process.env.ACCESS_KEY_ALPHAVANTAGE}`;
             console.log("URL", url);
-
-            const stockSymbolValue = stockSymbol[i];
-            const nameListValue = nameList[i];
-            const totalStocksValue = totalStocksList[i];
-            const totalInvestedValue = totalInvestedAmount[i];
-
-            const promise = axios.get(url)
-                .then(response => {
-                    const data = response.data;
-                    const currentPrice = data["Global Quote"]["05. price"];
-                    const currentValue = currentPrice * totalStocksValue;
-
-                    return {
-                        "stockSymbol": stockSymbolValue,
-                        "stockName": nameListValue,
-                        "currentTotalValue": currentValue,
-                        "totalInvestedAmount": totalInvestedValue,
-                        "numberOfShares": totalStocksValue
-                    };
-                })
+            // Check If Present in Redis
+            const storedStockData = await DATA.CONNECTION.redis.get(`${userId}_stocks_${name}`)
                 .catch(err => {
-                    throw createError.InternalServerError(SQL_ERROR);
-                });
+                    console.log("Error with redisclient get", err);
+                    throw createError.InternalServerError(Constants.REDIS_ERROR)
+                })
+            if (storedStockData == null) {
+                const promise = axios.get(url)
+                    .then(response => {
+                        const data = response.data;
+                        const currentPrice = data["Global Quote"]["05. price"];
+                        console.log("Url Request made", url)
+                        return {
+                            "currentPrice": currentPrice,
+                            "stockSymbol": name
+                        };
+                    })
+                    .catch(err => {
+                        throw createError.InternalServerError(SQL_ERROR);
+                    });
 
-            promiseArray.push(promise);
+                promiseArray.push(promise);
+            }
         }
-
-        const stockValueData = await Promise.all(promiseArray).catch(err => {
+        const stockValueData = [];
+        const promiseData = await Promise.all(promiseArray).catch(err => {
             console.log("error", err.message);
             throw err;
         })
-        return stockValueData;
+        // Store current prices in redis if not present
+        for (var i = 0; i < promiseData.length; i++) {
+            await DATA.CONNECTION.redis.set(`${userId}_stocks_${promiseData[i].stockSymbol}`, JSON.stringify(promiseData[i]), 'EX', 900)
+                .catch(err => {
+                    console.log("Error with redis", err.message);
+                    throw createError.InternalServerError(Constants.REDIS_ERROR)
+                })
+        }
 
+        // Store the Data
+        for (var i = 0; i < stockList.length; i++) {
+            const stockSymbol = stockList[i].dataValues.stockSymbol;
+            const stockName = stockList[i].dataValues.stockName;
+            const totalShares = stockList[i].dataValues.numberOfShares;
+            const totalAmount = stockList[i].dataValues.totalAmount;
+            const currentValue = await DATA.CONNECTION.redis.get(`${userId}_stocks_${stockSymbol}`)
+                .catch(err => {
+                    console.log("Error with redis", err.message);
+                    throw createError.InternalServerError(Constants.REDIS_ERROR)
+                })
+            const parsedData = JSON.parse(currentValue);
+            const totalCurrentValue = parsedData.currentPrice * totalShares;
+            stockValueData.push({
+                "stockSymbol": stockSymbol,
+                "stockName": stockName,
+                "currentTotalValue": totalCurrentValue,
+                "totalInvestedAmount": totalAmount,
+                "numberOfShares": totalShares
+            })
+        }
+        return stockValueData;
     }
 
     async viewStocks(payload) {
@@ -330,11 +348,11 @@ class StockRecordsService {
                     uid: payload
                 }
             }).catch(err => {
-                console.log("Error while fetching data", err.message);
+                console.log("Error while fetching data", err);
                 throw createError.InternalServerError(SQL_ERROR);
             })
 
-            const data = await this.getStockValueConcurrent(response);
+            const data = await this.getStockValueConcurrent(response, payload);
             console.log("View stocks result", data);
             return data;
         }
