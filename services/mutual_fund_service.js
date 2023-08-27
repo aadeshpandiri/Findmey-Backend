@@ -122,6 +122,75 @@ class MutualFundService {
         })
     }
 
+    async getFundsConcurrent(fundsList, userId) {
+        const promiseArray = [];
+        for (var i = 0; i < fundsList.length; i++) {
+            const name = fundsList[i].dataValues.schemeCode;
+            console.log(name);
+            const url = `https://api.mfapi.in/mf/${name}`;
+            console.log("URL", url);
+            // Check if present in redis
+            const fundsStoredData = await DATA.CONNECTION.redis.get(`${userId}_funds_${name}`)
+                .catch(err => {
+                    console.log("Error with redisclient get", err);
+                    throw createError.InternalServerError(Constants.REDIS_ERROR)
+                })
+            if (fundsStoredData == null) {
+                const promise = axios.get(url)
+                    .then(response => {
+                        const data = response.data;
+                        const currentPrice = data["data"][0]["nav"];
+                        console.log("Url Request made", url)
+                        return {
+                            "currentPrice": currentPrice,
+                            "schemeCode": name
+                        };
+                    })
+                    .catch(err => {
+                        throw createError.InternalServerError(SQL_ERROR);
+                    });
+
+                promiseArray.push(promise);
+            }
+        }
+        const fundsData = [];
+        const promiseData = await Promise.all(promiseArray).catch(err => {
+            console.log("error", err.message);
+            throw err;
+        })
+        // Store current prices in redis if not present
+        for (var i = 0; i < promiseData.length; i++) {
+            await DATA.CONNECTION.redis.set(`${userId}_funds_${promiseData[i].schemeCode}`, JSON.stringify(promiseData[i]), 'EX', 900)
+                .catch(err => {
+                    console.log("Error with redis", err.message);
+                    throw createError.InternalServerError(Constants.REDIS_ERROR)
+                })
+        }
+
+        // Store the Data
+        for (var i = 0; i < fundsList.length; i++) {
+            const schemeCode = fundsList[i].dataValues.schemeCode;
+            const schemeName = fundsList[i].dataValues.schemeName;
+            const totalShares = fundsList[i].dataValues.numberOfShares;
+            const totalAmount = fundsList[i].dataValues.totalAmount;
+            const currentValue = await DATA.CONNECTION.redis.get(`${userId}_funds_${schemeCode}`)
+                .catch(err => {
+                    console.log("Error with redis", err.message);
+                    throw createError.InternalServerError(Constants.REDIS_ERROR)
+                })
+            const parsedData = JSON.parse(currentValue);
+            const totalCurrentValue = parsedData.currentPrice * totalShares;
+            fundsData.push({
+                "schemeName": schemeName,
+                "schemeCode": schemeCode,
+                "currentTotalValue": totalCurrentValue,
+                "totalInvestedAmount": totalAmount,
+                "numberOfShares": totalShares
+            })
+        }
+        return fundsData;
+    }
+
     async viewMutualFundsList(payload) {
         try {
             const data = await MutualFundsMergedModel.findAll({
@@ -133,7 +202,7 @@ class MutualFundService {
                 throw createError.InternalServerError(SQL_ERROR)
             })
 
-            const result = await this.getFundsValue(data);
+            const result = await this.getFundsConcurrent(data, payload);
 
             return result;
         }
