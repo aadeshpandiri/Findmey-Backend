@@ -271,9 +271,7 @@ class StockRecordsService {
     }
 
     async getStockValueConcurrent(stockList, userId) {
-        console.log(stockList[0].dataValues)
         const promiseArray = [];
-        const existingArray = [];
         for (var i = 0; i < stockList.length; i++) {
             const name = stockList[i].dataValues.stockSymbol;
             console.log(name);
@@ -351,7 +349,7 @@ class StockRecordsService {
                 console.log("Error while fetching data", err);
                 throw createError.InternalServerError(SQL_ERROR);
             })
-
+            console.log(response);
             const data = await this.getStockValueConcurrent(response, payload);
             console.log("View stocks result", data);
             return data;
