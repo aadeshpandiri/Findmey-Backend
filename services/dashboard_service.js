@@ -42,39 +42,74 @@ class DashboardService {
         })
     }
 
-    async getStocksDetailsConcurrent(data) {
-        return new Promise(async (resolve, reject) => {
-            let totalStockValue = 0;
-            let totalCurrentValue = 0;
-            const promises = data.map(async (item) => {
-                const name = item.stockSymbol;
-                const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${name}&apikey=${process.env.ACCESS_KEY_ALPHAVANTAGE}`;
-                console.log("URL", url);
-                return axios.get(url).then(response => {
-                    const resdata = response.data;
-                    const currentPrice = resdata["Global Quote"]["05. price"];
-                    const currentValue = currentPrice * item.totalShares;
-                    return { currentValue, totalAmount: item.totalAmount };
-                });
-            });
-            const promiseResult = await Promise.all(promises);
-            console.log("Promise Result", promiseResult)
+    async getStockDetailsConcurrent(stockList, userId) {
+        let totalInvestedAmount = 0
+        let totalCurrentValue = 0
+        const promiseArray = []
+        for (var i = 0; i < stockList.length; i++) {
+            const name = stockList[i].stockSymbol;
+            console.log(name);
+            const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${name}&apikey=${process.env.ACCESS_KEY_ALPHAVANTAGE}`;
+            console.log("URL", url);
+            const storedStockData = await DATA.CONNECTION.redis.get(`${userId}_stocks_${name}`)
+                .catch(err => {
+                    console.log("Error with redisclient get", err);
+                    throw createError.InternalServerError(Constants.REDIS_ERROR)
+                })
+            if (storedStockData == null) {
+                const promise = axios.get(url)
+                    .then(response => {
+                        const data = response.data;
+                        const currentPrice = data["Global Quote"]["05. price"];
+                        console.log("Url Request made", url)
+                        return {
+                            "currentPrice": currentPrice,
+                            "stockSymbol": name
+                        };
+                    })
+                    .catch(err => {
+                        throw createError.InternalServerError(SQL_ERROR);
+                    });
 
-            for (var z = 0; z < promiseResult.length; z++) {
-                totalStockValue = totalStockValue + promiseResult[z].totalAmount;
-                totalCurrentValue = totalCurrentValue + promiseResult[z].currentValue
+                promiseArray.push(promise);
             }
-
-            const response = {
-                "img": "Stocks",
-                "name": "Stocks",
-                "label": "Stocks",
-                "values": totalStockValue,
-                "currentValues": totalCurrentValue,
-                "percentage": ((totalCurrentValue - totalStockValue) / totalStockValue) * 100
-            };
-            resolve(response)
-        });
+        }
+        const promiseData = await Promise.all(promiseArray).catch(err => {
+            console.log("error", err.message);
+            throw err;
+        })
+        // Store current prices in redis if not present
+        for (var i = 0; i < promiseData.length; i++) {
+            await DATA.CONNECTION.redis.set(`${userId}_stocks_${promiseData[i].stockSymbol}`, JSON.stringify(promiseData[i]), 'EX', 900)
+                .catch(err => {
+                    console.log("Error with redis", err.message);
+                    throw createError.InternalServerError(Constants.REDIS_ERROR)
+                })
+        }
+        // Response Calculation
+        for (var i = 0; i < stockList.length; i++) {
+            const stockSymbol = stockList[i].stockSymbol;
+            const totalShares = stockList[i].totalShares;
+            const totalAmount = stockList[i].totalAmount;
+            const currentValue = await DATA.CONNECTION.redis.get(`${userId}_stocks_${stockSymbol}`)
+                .catch(err => {
+                    console.log("Error with redis", err.message);
+                    throw createError.InternalServerError(Constants.REDIS_ERROR)
+                })
+            const parsedData = JSON.parse(currentValue);
+            totalCurrentValue = totalCurrentValue + (parsedData.currentPrice * totalShares);
+            totalInvestedAmount = totalInvestedAmount + totalAmount
+            console.log(totalCurrentValue)
+        }
+        const response = {
+            "img": "Stocks",
+            "name": "Stocks",
+            "label": "Stocks",
+            "values": totalInvestedAmount,
+            "currentValues": totalCurrentValue,
+            "percentage": ((totalCurrentValue - totalInvestedAmount) / totalInvestedAmount) * 100
+        };
+        return response;
     }
 
     getMutualFundDetails(data) {
@@ -111,40 +146,75 @@ class DashboardService {
         })
     }
 
-    async getMutualFundDetailsConcurrent(data) {
-        return new Promise(async (resolve, reject) => {
-            let totalFundsValue = 0;
-            let totalCurrentValue = 0;
-            const promises = data.map(async (item) => {
-                const name = item.schemeCode;
-                const url = `https://api.mfapi.in/mf/${name}`;
-                console.log("URL", url);
+    async getMutualFundDetailsConcurrent(fundsList, userId) {
+        let totalInvestedAmount = 0
+        let currentTotalValue = 0
+        const promiseArray = [];
+        for (var i = 0; i < fundsList.length; i++) {
+            const name = fundsList[i].schemeCode;
+            console.log(name);
+            const url = `https://api.mfapi.in/mf/${name}`;
+            console.log("URL", url);
+            // Check if present in redis
+            const fundsStoredData = await DATA.CONNECTION.redis.get(`${userId}_funds_${name}`)
+                .catch(err => {
+                    console.log("Error with redisclient get", err);
+                    throw createError.InternalServerError(Constants.REDIS_ERROR)
+                })
+            if (fundsStoredData == null) {
+                const promise = axios.get(url)
+                    .then(response => {
+                        const data = response.data;
+                        const currentPrice = data["data"][0]["nav"];
+                        console.log("Url Request made", url)
+                        return {
+                            "currentPrice": currentPrice,
+                            "schemeCode": name
+                        };
+                    })
+                    .catch(err => {
+                        throw createError.InternalServerError(SQL_ERROR);
+                    });
 
-                return axios.get(url).then(response => {
-                    const resdata = response.data;
-                    const currentPrice = resdata["data"][0]["nav"];
-                    const currentValue = currentPrice * data[i].totalShares;
-                    return { currentValue, totalAmount: item.totalAmount };
-                });
-            });
-            const promiseResult = await Promise.all(promises);
-            console.log("Promise Result", promiseResult)
-
-            for (var z = 0; z < promiseResult.length; z++) {
-                totalFundsValue = totalFundsValue + promiseResult[z].totalAmount;
-                totalCurrentValue = totalCurrentValue + promiseResult[z].currentValue
+                promiseArray.push(promise);
             }
-
-            const response = {
-                "img": "Funds",
-                "name": "Mutual Funds",
-                "label": "Mutual Funds",
-                "values": totalFundsValue,
-                "currentValues": totalCurrentValue,
-                "percentage": ((totalCurrentValue - totalFundsValue) / totalFundsValue) * 100
-            }
-            resolve(response)
+        }
+        const promiseData = await Promise.all(promiseArray).catch(err => {
+            console.log("error", err.message);
+            throw err;
         })
+        // Store current prices in redis if not present
+        for (var i = 0; i < promiseData.length; i++) {
+            await DATA.CONNECTION.redis.set(`${userId}_funds_${promiseData[i].schemeCode}`, JSON.stringify(promiseData[i]), 'EX', 900)
+                .catch(err => {
+                    console.log("Error with redis", err.message);
+                    throw createError.InternalServerError(Constants.REDIS_ERROR)
+                })
+        }
+        // calculate response
+        for (var i = 0; i < fundsList.length; i++) {
+            const schemeCode = fundsList[i].schemeCode;
+            const totalShares = fundsList[i].totalShares;
+            const totalAmount = fundsList[i].totalAmount;
+            const currentValue = await DATA.CONNECTION.redis.get(`${userId}_funds_${schemeCode}`)
+                .catch(err => {
+                    console.log("Error with redis", err.message);
+                    throw createError.InternalServerError(Constants.REDIS_ERROR)
+                })
+            const parsedData = JSON.parse(currentValue);
+            const totalCurrentValue = parsedData.currentPrice * totalShares;
+            totalInvestedAmount = totalInvestedAmount + totalAmount
+            currentTotalValue = currentTotalValue + totalCurrentValue
+        }
+        const response = {
+            "img": "Funds",
+            "name": "Mutual Funds",
+            "label": "Mutual Funds",
+            "values": totalInvestedAmount,
+            "currentValues": currentTotalValue,
+            "percentage": ((currentTotalValue - totalInvestedAmount) / totalInvestedAmount) * 100
+        }
+        return response;
     }
 
     getBondsDetails(data) {
@@ -171,13 +241,26 @@ class DashboardService {
 
     getSavingsDetails(data) {
         return new Promise((resolve, reject) => {
-            const response = {
-                "img": "Savings",
-                "name": "Savings",
-                "label": "Savings",
-                "values": data[0].totalAmount,
-                "currentValues": data[0].totalAmount,
-                "percentage": "NaN"
+            let response = null
+            if (data.length > 0) {
+                response = {
+                    "img": "Savings",
+                    "name": "Savings",
+                    "label": "Savings",
+                    "values": data[0].totalAmount,
+                    "currentValues": data[0].totalAmount,
+                    "percentage": "NaN"
+                }
+            }
+            else {
+                response = {
+                    "img": "Savings",
+                    "name": "Savings",
+                    "label": "Savings",
+                    "values": 0,
+                    "currentValues": 0,
+                    "percentage": "NaN"
+                }
             }
             resolve(response)
         })
@@ -185,14 +268,28 @@ class DashboardService {
 
     getPPFDetails(data) {
         return new Promise((resolve, reject) => {
-            const response = {
-                "img": "PPF",
-                "name": "PPF",
-                "label": "PPF",
-                "values": data[0].totalAmount,
-                "currentValues": data[0].totalAmount,
-                "percentage": "NaN"
+            let response = null
+            if (data.length > 0) {
+                response = {
+                    "img": "PPF",
+                    "name": "PPF",
+                    "label": "PPF",
+                    "values": data[0].totalAmount,
+                    "currentValues": data[0].totalAmount,
+                    "percentage": "NaN"
+                }
             }
+            else {
+                response = {
+                    "img": "PPF",
+                    "name": "PPF",
+                    "label": "PPF",
+                    "values": 0,
+                    "currentValues": 0,
+                    "percentage": "NaN"
+                }
+            }
+
             resolve(response)
         })
     }
@@ -218,13 +315,26 @@ class DashboardService {
 
     getGoldDetails(data) {
         return new Promise((resolve, reject) => {
-            const response = {
-                "img": "Gold",
-                "name": "Gold",
-                "label": "Gold",
-                "values": data[0].investedAmount,
-                "currentValues": data[0].totalAmount,
-                "percentage": "NaN"
+            let response = null;
+            if (data.length > 0) {
+                response = {
+                    "img": "Gold",
+                    "name": "Gold",
+                    "label": "Gold",
+                    "values": data[0].investedAmount,
+                    "currentValues": data[0].totalAmount,
+                    "percentage": "NaN"
+                }
+            }
+            else {
+                response = {
+                    "img": "Gold",
+                    "name": "Gold",
+                    "label": "Gold",
+                    "values": 0,
+                    "currentValues": 0,
+                    "percentage": "NaN"
+                }
             }
             resolve(response)
         })
@@ -247,7 +357,7 @@ class DashboardService {
                     throw createError.InternalServerError(SQL_ERROR)
                 })
                 console.log("Stock Data", stockData)
-                const stockDetails = await this.getStocksDetailsConcurrent(stockData)
+                const stockDetails = await this.getStockDetailsConcurrent(stockData, userId)
                 console.log("Stock Calculated Details", stockDetails)
                 response.push(stockDetails)
 
@@ -264,7 +374,7 @@ class DashboardService {
                 })
 
                 console.log("Funds Data", fundsData)
-                const mutualFundsDetails = await this.getMutualFundDetailsConcurrent(fundsData)
+                const mutualFundsDetails = await this.getMutualFundDetailsConcurrent(fundsData, userId)
                 console.log("Funds Calculated Details", mutualFundsDetails)
                 response.push(mutualFundsDetails)
 
