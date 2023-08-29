@@ -82,7 +82,11 @@ class FinanceRecordsService {
 
             // Calculate monthly sums
             const monthlySumQuery = `
-                SELECT YEAR(date) AS year, MONTH(date) AS month, SUM(shoppingValue + paymentValue + foodValue + othersValue) AS monthly_expense
+                SELECT YEAR(date) AS year, MONTH(date) AS month, SUM(shoppingValue + paymentValue + foodValue + othersValue) AS monthly_expense,
+                SUM(shoppingValue) as shopping_monthly_expense , 
+                SUM(paymentValue) as payment_monthly_expense , 
+                SUM(foodValue) as food_monthly_expense , 
+                SUM(othersValue) as others_monthly_expense  
                 FROM finance_records where uid = ${payload.uid}
                 GROUP BY YEAR(date), MONTH(date)
                 ORDER BY YEAR(date) DESC, MONTH(date) DESC
