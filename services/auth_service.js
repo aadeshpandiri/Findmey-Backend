@@ -5,6 +5,7 @@ const Constants = require('../utils/Constants/response_messages')
 const bcrypt = require('bcrypt')
 const { loginSchema, registerSchema } = require('../utils/SchemaValidations/authvalidation')
 const JwtHelper = require('../utils/Helpers/jwt_helper')
+var crypto = require("crypto");
 
 class AuthService {
     constructor() {
@@ -70,6 +71,26 @@ class AuthService {
                 subject: "Welcome to FINDEMY",
                 text: `Welcome to FINDEMY. Your OTP for registration is ${otp}. 
                 PLEASE DO NOT SHARE OTP WITH ANYONE. OTP is only valid for 2 Minutes`
+            }
+
+            global.DATA.UTILS.EMAILSENDER.send(messageBody).then(message => {
+                console.log("Email Sent to the Mail");
+                resolve("EMAIL SENT")
+            }).catch(err => {
+                console.log("Eror occured during email sending", err.message);
+                reject(createError.InternalServerError("EMAIL DID NOT SENT"))
+            })
+        })
+    }
+
+    sendLinkToEmail(emailId, Link) {
+        return new Promise((resolve, reject) => {
+            const messageBody = {
+                to: emailId,
+                from: process.env.EMAIL_SENDER,
+                subject: "Welcome to FINDEMY",
+                text: `Your Password reset link is ${Link}. 
+                Link is valid only for 15 minutes.`
             }
 
             global.DATA.UTILS.EMAILSENDER.send(messageBody).then(message => {
@@ -273,6 +294,64 @@ class AuthService {
                     reject(createError.InternalServerError(Constants.REDIS_ERROR))
                 })
         })
+    }
+
+    forgotPassword(email) {
+        return new Promise(async (resolve, reject) => {
+            const data = await UserModel.findOne({
+                where: {
+                    email: email
+                }
+            }).catch(err => {
+                console.log("Error during checking user", err.message)
+                reject(createError.InternalServerError(Constants.SQL_ERROR))
+            })
+            if (!data) {
+                reject(createError.NotFound("User Not Found"))
+            }
+            var uniqueKey = crypto.randomBytes(30).toString('hex');
+            await DATA.CONNECTION.redis.set(uniqueKey, email, 'EX', 900)
+                .catch(err => {
+                    console.log("Error with redis", err.message);
+                    reject(createError.InternalServerError(Constants.REDIS_ERROR))
+                })
+            const url = `http://findmey.in/forgotPassword/${uniqueKey}`
+
+            await this.sendLinkToEmail(email, url);
+
+            resolve("Email Sent to Mail Successfully")
+        })
+    }
+
+    async changePassword(payload) {
+        const key = payload.uniqueKey;
+        const data = await DATA.CONNECTION.redis.get(key.toString().slice(0, -1))
+            .catch(err => {
+                console.log("Error with redisclient get", err.mesasge);
+                throw createError.InternalServerError(Constants.REDIS_ERROR)
+            })
+        if (data == null) {
+            throw createError.NotFound("Invalid Link")
+        }
+        console.log("User forgot password email", data)
+
+        const newPassword = payload.password;
+        const randomkey = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(newPassword, randomkey)
+
+        await UserModel.update({
+            password: hashedPassword
+        }, {
+            where: {
+                email: data
+            }
+        }).catch(err => {
+            console.log("Error while updating the password", err.message);
+            throw err;
+        })
+
+        await DATA.CONNECTION.redis.del(key.toString().slice(0, -1))
+        return "Password Updated Successfully"
     }
 }
 
