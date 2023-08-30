@@ -212,13 +212,13 @@ class FinanceRecordsService {
             const monthlyIncomeArray = await this.executeQuery(monthlySumQuery);
             const weeklyIncomeArray = await this.executeQuery(weeklySumQuery);
 
-            let totalIncomeOutput = [
-                 totalIncomeArray[0],
-                 yearlyIncomeArray[0],
-                 monthlyIncomeArray[0],
-                weeklyIncomeArray[0],
+            let totalIncomeOutput = [{
+                totalIncomeArray:totalIncomeArray[0],
+                yearlyIncomeArray:yearlyIncomeArray[0],
+                monthlyIncomeArray: monthlyIncomeArray,
+                weeklyIncomeArray: weeklyIncomeArray[0],
 
-            ]
+        }]
             return totalIncomeOutput;
         } catch (err) {
             throw err;
