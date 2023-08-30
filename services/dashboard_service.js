@@ -34,9 +34,9 @@ class DashboardService {
                 "img": "Savings",
                 "name": "Savings",
                 "label": "Savings",
-                "values": totalStockValue,
-                "currentValues": totalCurrentValue,
-                "percentage": ((totalCurrentValue - totalStockValue) / totalStockValue) * 100
+                "values": isNaN(totalStockValue) ? 0 : totalStockValue,
+                "currentValues": isNaN(totalCurrentValue) ? 0 : totalCurrentValue,
+                "percentage": isNaN(((totalCurrentValue - totalStockValue) / totalStockValue) * 100) ? 0 : ((totalCurrentValue - totalStockValue) / totalStockValue) * 100
             }
             resolve(response)
         })
@@ -105,9 +105,9 @@ class DashboardService {
             "img": "Stocks",
             "name": "Stocks",
             "label": "Stocks",
-            "values": totalInvestedAmount,
-            "currentValues": totalCurrentValue,
-            "percentage": ((totalCurrentValue - totalInvestedAmount) / totalInvestedAmount) * 100
+            "values": isNaN(totalInvestedAmount) ? 0 : totalInvestedAmount,
+            "currentValues": isNaN(totalCurrentValue) ? 0 : totalCurrentValue,
+            "percentage": isNaN(((totalCurrentValue - totalInvestedAmount) / totalInvestedAmount) * 100) ? 0 : ((totalCurrentValue - totalInvestedAmount) / totalInvestedAmount) * 100
         };
         return response;
     }
@@ -138,9 +138,9 @@ class DashboardService {
                 "img": "Funds",
                 "name": "Mutual Funds",
                 "label": "Mutual Funds",
-                "values": totalFundsValue,
-                "currentValues": totalCurrentValue,
-                "percentage": ((totalCurrentValue - totalFundsValue) / totalFundsValue) * 100
+                "values": isNaN(totalFundsValue) ? 0 : totalFundsValue,
+                "currentValues": isNaN(totalCurrentValue) ? 0 : totalCurrentValue,
+                "percentage": isNaN(((totalCurrentValue - totalFundsValue) / totalFundsValue) * 100) ? 0 : ((totalCurrentValue - totalFundsValue) / totalFundsValue) * 100
             }
             resolve(response)
         })
@@ -210,9 +210,9 @@ class DashboardService {
             "img": "Funds",
             "name": "Mutual Funds",
             "label": "Mutual Funds",
-            "values": totalInvestedAmount,
-            "currentValues": currentTotalValue,
-            "percentage": ((currentTotalValue - totalInvestedAmount) / totalInvestedAmount) * 100
+            "values": isNaN(totalInvestedAmount) ? 0 : totalInvestedAmount,
+            "currentValues": isNaN(currentTotalValue) ? 0 : currentTotalValue,
+            "percentage": isNaN(((currentTotalValue - totalInvestedAmount) / totalInvestedAmount) * 100) ? 0 : ((currentTotalValue - totalInvestedAmount) / totalInvestedAmount) * 100
         }
         return response;
     }
@@ -231,9 +231,9 @@ class DashboardService {
                 "img": "Bonds",
                 "name": "Bonds",
                 "label": "Bonds",
-                "values": totalBondsValue,
-                "currentValues": totalCurrentValue,
-                "percentage": "NaN"
+                "values": isNaN(totalBondsValue) ? 0 : totalBondsValue,
+                "currentValues": isNaN(totalCurrentValue) ? 0 : totalCurrentValue,
+                "percentage": 0
             }
             resolve(response)
         })
@@ -247,9 +247,9 @@ class DashboardService {
                     "img": "Savings",
                     "name": "Savings",
                     "label": "Savings",
-                    "values": data[0].totalAmount,
-                    "currentValues": data[0].totalAmount,
-                    "percentage": "NaN"
+                    "values": isNaN(data[0].totalAmount) ? 0 : data[0].totalAmount,
+                    "currentValues": isNaN(data[0].totalAmount) ? 0 : data[0].totalAmount,
+                    "percentage": 0
                 }
             }
             else {
@@ -259,7 +259,7 @@ class DashboardService {
                     "label": "Savings",
                     "values": 0,
                     "currentValues": 0,
-                    "percentage": "NaN"
+                    "percentage": 0
                 }
             }
             resolve(response)
@@ -274,9 +274,9 @@ class DashboardService {
                     "img": "PPF",
                     "name": "PPF",
                     "label": "PPF",
-                    "values": data[0].totalAmount,
-                    "currentValues": data[0].totalAmount,
-                    "percentage": "NaN"
+                    "values": isNaN(data[0].totalAmount) ? 0 : data[0].totalAmount,
+                    "currentValues": isNaN(data[0].totalAmount) ? 0 : data[0].totalAmount,
+                    "percentage": 0
                 }
             }
             else {
@@ -286,7 +286,7 @@ class DashboardService {
                     "label": "PPF",
                     "values": 0,
                     "currentValues": 0,
-                    "percentage": "NaN"
+                    "percentage": 0
                 }
             }
 
@@ -305,7 +305,7 @@ class DashboardService {
                     "label": data[i].trackerName,
                     "values": data[0].investedAmount,
                     "currentValues": data[0].currentValue,
-                    "percentage": ((data[0].currentValue - data[0].investedAmount) / data[0].investedAmount) * 100
+                    "percentage": isNaN(((data[0].currentValue - data[0].investedAmount) / data[0].investedAmount) * 100) ? 0 : ((data[0].currentValue - data[0].investedAmount) / data[0].investedAmount) * 100
                 }
                 response.push(currentRecord)
             }
@@ -321,9 +321,9 @@ class DashboardService {
                     "img": "Gold",
                     "name": "Gold",
                     "label": "Gold",
-                    "values": data[0].investedAmount,
-                    "currentValues": data[0].totalAmount,
-                    "percentage": "NaN"
+                    "values": isNaN(data[0].investedAmount) ? 0 : data[0].investedAmount,
+                    "currentValues": isNaN(data[0].totalAmount) ? 0 : data[0].totalAmount,
+                    "percentage": 0
                 }
             }
             else {
@@ -333,7 +333,7 @@ class DashboardService {
                     "label": "Gold",
                     "values": 0,
                     "currentValues": 0,
-                    "percentage": "NaN"
+                    "percentage": 0
                 }
             }
             resolve(response)
@@ -379,7 +379,7 @@ class DashboardService {
                 response.push(mutualFundsDetails)
 
                 // Bonds Data
-                const bondsData = await DATA.CONNECTION.mysql.query(`select sum(totalAmount) as totalAmount, bondName, "NA" as totalShares from bond_records where uid =:uid`, {
+                const bondsData = await DATA.CONNECTION.mysql.query(`select totalAmount as totalAmount, bondName, "NA" as totalShares from bond_records where uid =:uid`, {
                     type: Sequelize.QueryTypes.SELECT,
                     transaction: t,
                     replacements: {
@@ -396,7 +396,7 @@ class DashboardService {
                 response.push(bondDetails)
 
                 // Savings
-                const savingsData = await DATA.CONNECTION.mysql.query(`select sum(savingsAmount) as totalAmount from saving_records where uid =:uid`, {
+                const savingsData = await DATA.CONNECTION.mysql.query(`select savingsAmount as totalAmount from saving_records where uid =:uid`, {
                     type: Sequelize.QueryTypes.SELECT,
                     transaction: t,
                     replacements: {
@@ -413,7 +413,7 @@ class DashboardService {
                 response.push(savingsDataDetails)
 
                 // PPF
-                const ppfData = await DATA.CONNECTION.mysql.query(`select sum(ppfAmount) as totalAmount from ppf_records where uid =:uid`, {
+                const ppfData = await DATA.CONNECTION.mysql.query(`select ppfAmount as totalAmount from ppf_records where uid =:uid`, {
                     type: Sequelize.QueryTypes.SELECT,
                     transaction: t,
                     replacements: {
