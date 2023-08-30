@@ -62,15 +62,36 @@ class AuthService {
         }
     }
 
+    sendOtpToEmail(emailId, otp) {
+        return new Promise((resolve, reject) => {
+            const messageBody = {
+                to: emailId,
+                from: process.env.EMAIL_SENDER,
+                subject: "Welcome to FINDEMY",
+                text: `Welcome to FINDEMY. Your OTP for registration is ${otp}. 
+                PLEASE DO NOT SHARE OTP WITH ANYONE. OTP is only valid for 2 Minutes`
+            }
+
+            global.DATA.UTILS.EMAILSENDER.send(messageBody).then(message => {
+                console.log("Email Sent to the Mail");
+                resolve("EMAIL SENT")
+            }).catch(err => {
+                console.log("Eror occured during email sending", err.message);
+                reject(createError.InternalServerError("EMAIL DID NOT SENT"))
+            })
+        })
+    }
+
     async sendOtp(payload) {
         try {
             const emailId = payload.email;
-            const otp = payload.id + "2023"
-            console.log("Generated Otp Value", otp);
+            const otp = Math.floor(1000 + Math.random() * 9000);
+            console.log("Generated Random Otp Value", otp);
 
             // Code for sending otp to Email Id
+            await this.sendOtpToEmail(emailId, otp);
 
-            await DATA.CONNECTION.redis.set(`register_otp_${emailId}`, otp, 'EX', 120)
+            await DATA.CONNECTION.redis.set(`register_otp_${emailId}`, otp, 'EX', 180)
                 .catch(err => {
                     console.log("Error with redis", err.message);
                     throw createError.InternalServerError(Constants.REDIS_ERROR)
