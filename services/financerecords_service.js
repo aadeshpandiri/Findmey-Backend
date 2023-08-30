@@ -25,7 +25,7 @@ class FinanceRecordsService {
 
     async getTotalExpense(payload) {
         try {
-            const searchData = await DATA.CONNECTION.mysql.query(`SELECT SUM(shoppingValue + paymentValue + foodValue + othersValue) AS totalExpenses
+            const searchData = await DATA.CONNECTION.mysql.query(`SELECT IFNULL(SUM(shoppingValue + paymentValue + foodValue + othersValue),0) AS totalExpenses
             FROM finance_records where uid = ${payload.uid}`, {
                 type: Sequelize.QueryTypes.SELECT
             }).catch(err => {
@@ -43,7 +43,7 @@ class FinanceRecordsService {
 
     async getTotalIncome(payload) {
         try {
-            const searchData = await DATA.CONNECTION.mysql.query(`SELECT SUM(incomeValue) AS totalIncome
+            const searchData = await DATA.CONNECTION.mysql.query(`SELECT IFNULL(SUM(incomeValue),0) AS totalIncome
             FROM finance_records where uid = ${payload.uid}`, {
                 type: Sequelize.QueryTypes.SELECT
             }).catch(err => {
@@ -69,11 +69,11 @@ class FinanceRecordsService {
     async getWholeExpenseData(payload) {
         try {
             // Calculate total sum
-            const totalSumQuery = `SELECT SUM(shoppingValue + paymentValue + foodValue + othersValue) AS total_expense FROM finance_records where uid = ${payload.uid}`;
+            const totalSumQuery = `SELECT IFNULL(SUM(shoppingValue + paymentValue + foodValue + othersValue),0) AS total_expense FROM finance_records where uid = ${payload.uid}`;
 
             // Calculate yearly sums
             const yearlySumQuery = `
-                SELECT YEAR(date) AS year, SUM(shoppingValue + paymentValue + foodValue + othersValue) AS yearly_expense
+                SELECT YEAR(date) AS year, IFNULL(SUM(shoppingValue + paymentValue + foodValue + othersValue),0) AS yearly_expense
                 FROM finance_records where uid = ${payload.uid}
                 GROUP BY YEAR(date)
                 ORDER BY YEAR(date) DESC
@@ -82,11 +82,11 @@ class FinanceRecordsService {
 
             // Calculate monthly sums
             const monthlySumQuery = `
-                SELECT YEAR(date) AS year, MONTH(date) AS month, SUM(shoppingValue + paymentValue + foodValue + othersValue) AS monthly_expense,
-                SUM(shoppingValue) as shopping_monthly_expense , 
-                SUM(paymentValue) as payment_monthly_expense , 
-                SUM(foodValue) as food_monthly_expense , 
-                SUM(othersValue) as others_monthly_expense  
+                SELECT YEAR(date) AS year, MONTH(date) AS month, IFNULL(SUM(shoppingValue + paymentValue + foodValue + othersValue),0) AS monthly_expense,
+                IFNULL(SUM(shoppingValue),0) as shopping_monthly_expense , 
+                IFNULL(SUM(paymentValue),0) as payment_monthly_expense , 
+                IFNULL(SUM(foodValue),0) as food_monthly_expense , 
+                IFNULL(SUM(othersValue),0) as others_monthly_expense  
                 FROM finance_records where uid = ${payload.uid}
                 GROUP BY YEAR(date), MONTH(date)
                 ORDER BY YEAR(date) DESC, MONTH(date) DESC
@@ -95,7 +95,7 @@ class FinanceRecordsService {
 
             // Calculate weekly sums
             const weeklySumQuery = `
-                SELECT YEAR(date) AS year, WEEK(date) AS week, SUM(shoppingValue + paymentValue + foodValue + othersValue) AS weekly_expense
+                SELECT YEAR(date) AS year, WEEK(date) AS week, IFNULL(SUM(shoppingValue + paymentValue + foodValue + othersValue),0) AS weekly_expense
                 FROM finance_records where uid = ${payload.uid}
                 GROUP BY YEAR(date), WEEK(date)
                 ORDER BY YEAR(date) DESC, WEEK(date) DESC
@@ -103,21 +103,21 @@ class FinanceRecordsService {
 
             // Calculate total sum expense percentage 
             const totalPercentageSumQuery = `
-            SELECT SUM(shoppingValue + paymentValue + foodValue + othersValue) AS total_expense ,
-                ( (SUM(shoppingValue)) / (SUM(shoppingValue + paymentValue + foodValue + othersValue)))*100 as shopping_total_percentage,
-                ( (SUM(paymentValue)) / (SUM(shoppingValue + paymentValue + foodValue + othersValue)))*100 as payment_total_percentage,
-                ( (SUM(foodValue)) / (SUM(shoppingValue + paymentValue + foodValue + othersValue)))*100 as food_total_percentage,
-                ( (SUM(othersValue)) / (SUM(shoppingValue + paymentValue + foodValue + othersValue)))*100 as others_total_percentage
+            SELECT IFNULL(SUM(shoppingValue + paymentValue + foodValue + othersValue),0) AS total_expense ,
+                IFNULL(( (SUM(shoppingValue)) / (SUM(shoppingValue + paymentValue + foodValue + othersValue)))*100,0) as shopping_total_percentage,
+                IFNULL(( (SUM(paymentValue)) / (SUM(shoppingValue + paymentValue + foodValue + othersValue)))*100,0) as payment_total_percentage,
+                IFNULL( ( (SUM(foodValue)) / (SUM(shoppingValue + paymentValue + foodValue + othersValue)))*100,0) as food_total_percentage,
+                IFNULL(( (SUM(othersValue)) / (SUM(shoppingValue + paymentValue + foodValue + othersValue)))*100,0) as others_total_percentage
             FROM finance_records where uid = ${payload.uid}`
             ;
 
             // Calculate yearly sum expense percentage 
             const yearlyPercentageSumQuery = `
                 SELECT YEAR(date) AS year, SUM(shoppingValue + paymentValue + foodValue + othersValue) AS yearly_expense,
-                    ( (SUM(shoppingValue)) / (SUM(shoppingValue + paymentValue + foodValue + othersValue)))*100 as shopping_yearly_percentage,
-                    ( (SUM(paymentValue)) / (SUM(shoppingValue + paymentValue + foodValue + othersValue)))*100 as payment_yearly_percentage,
-                    ( (SUM(foodValue)) / (SUM(shoppingValue + paymentValue + foodValue + othersValue)))*100 as food_yearly_percentage,
-                    ( (SUM(othersValue)) / (SUM(shoppingValue + paymentValue + foodValue + othersValue)))*100 as others_yearly_percentage
+                    IFNULL(( (SUM(shoppingValue)) / (SUM(shoppingValue + paymentValue + foodValue + othersValue)))*100,0) as shopping_yearly_percentage,
+                    IFNULL(( (SUM(paymentValue)) / (SUM(shoppingValue + paymentValue + foodValue + othersValue)))*100,0) as payment_yearly_percentage,
+                    IFNULL( ( (SUM(foodValue)) / (SUM(shoppingValue + paymentValue + foodValue + othersValue)))*100,0) as food_yearly_percentage,
+                    IFNULL(( (SUM(othersValue)) / (SUM(shoppingValue + paymentValue + foodValue + othersValue)))*100,0) as others_yearly_percentage
                 FROM finance_records where uid = ${payload.uid}
                 GROUP BY YEAR(date)
                 ORDER BY YEAR(date) DESC
@@ -126,10 +126,10 @@ class FinanceRecordsService {
             // Calculate monthly expense percentage
             const monthlyPercentageSumQuery = `
             SELECT YEAR(date) AS year, MONTH(date) AS month, SUM(shoppingValue + paymentValue + foodValue + othersValue) AS monthly_expense,
-                ( (SUM(shoppingValue)) / (SUM(shoppingValue + paymentValue + foodValue + othersValue)))*100 as shopping_monthly_percentage,
-                ( (SUM(paymentValue)) / (SUM(shoppingValue + paymentValue + foodValue + othersValue)))*100 as payment_monthly_percentage,
-                ( (SUM(foodValue)) / (SUM(shoppingValue + paymentValue + foodValue + othersValue)))*100 as food_monthly_percentage,
-                ( (SUM(othersValue)) / (SUM(shoppingValue + paymentValue + foodValue + othersValue)))*100 as others_monthly_percentage
+                IFNULL(( (SUM(shoppingValue)) / (SUM(shoppingValue + paymentValue + foodValue + othersValue)))*100,0) as shopping_monthly_percentage,
+                IFNULL(( (SUM(paymentValue)) / (SUM(shoppingValue + paymentValue + foodValue + othersValue)))*100,0) as payment_monthly_percentage,
+                IFNULL( ( (SUM(foodValue)) / (SUM(shoppingValue + paymentValue + foodValue + othersValue)))*100,0) as food_monthly_percentage,
+                IFNULL(( (SUM(othersValue)) / (SUM(shoppingValue + paymentValue + foodValue + othersValue)))*100,0) as others_monthly_percentage
                 FROM finance_records where uid = ${payload.uid}
                 GROUP BY YEAR(date), MONTH(date)
                 ORDER BY YEAR(date) DESC, MONTH(date) DESC
@@ -138,10 +138,10 @@ class FinanceRecordsService {
             // Calculate weekly sum expense percentage 
             const weeklyPercentageSumQuery = `
                 SELECT YEAR(date) AS year, WEEK(date) AS week, SUM(shoppingValue + paymentValue + foodValue + othersValue) AS weekly_expense,
-                ( (SUM(shoppingValue)) / (SUM(shoppingValue + paymentValue + foodValue + othersValue)))*100 as shopping_weekly_percentage,
-                ( (SUM(paymentValue)) / (SUM(shoppingValue + paymentValue + foodValue + othersValue)))*100 as payment_weekly_percentage,
-                ( (SUM(foodValue)) / (SUM(shoppingValue + paymentValue + foodValue + othersValue)))*100 as food_weekly_percentage,
-                ( (SUM(othersValue)) / (SUM(shoppingValue + paymentValue + foodValue + othersValue)))*100 as others_weekly_percentage
+                    IFNULL(( (SUM(shoppingValue)) / (SUM(shoppingValue + paymentValue + foodValue + othersValue)))*100,0) as shopping_weekly_percentage,
+                    IFNULL(( (SUM(paymentValue)) / (SUM(shoppingValue + paymentValue + foodValue + othersValue)))*100,0) as payment_weekly_percentage,
+                    IFNULL( ( (SUM(foodValue)) / (SUM(shoppingValue + paymentValue + foodValue + othersValue)))*100,0) as food_weekly_percentage,
+                    IFNULL(( (SUM(othersValue)) / (SUM(shoppingValue + paymentValue + foodValue + othersValue)))*100,0) as others_weekly_percentage
                 FROM finance_records where uid = ${payload.uid}
                 GROUP BY YEAR(date), WEEK(date)
                 ORDER BY YEAR(date) DESC, WEEK(date) DESC
@@ -182,7 +182,7 @@ class FinanceRecordsService {
 
             // Calculate yearly sums
             const yearlySumQuery = `
-                SELECT YEAR(date) AS year, SUM(incomeValue) AS yearly_income
+                SELECT YEAR(date) AS year, IFNULL(SUM(incomeValue),0) AS yearly_income
                 FROM finance_records where uid = ${payload.uid}
                 GROUP BY YEAR(date)
                 ORDER BY YEAR(date) DESC
@@ -191,7 +191,7 @@ class FinanceRecordsService {
 
             // Calculate monthly sums
             const monthlySumQuery = `
-                SELECT YEAR(date) AS year, MONTH(date) AS month, SUM(incomeValue) AS monthly_income
+                SELECT YEAR(date) AS year, MONTH(date) AS month, IFNULL(SUM(incomeValue),0) AS monthly_income
                 FROM finance_records where uid = ${payload.uid}
                 GROUP BY YEAR(date), MONTH(date)
                 ORDER BY YEAR(date) DESC, MONTH(date) DESC
@@ -200,7 +200,7 @@ class FinanceRecordsService {
 
             // Calculate weekly sums
             const weeklySumQuery = `
-                SELECT YEAR(date) AS year, WEEK(date) AS week, SUM(incomeValue) AS weekly_income
+                SELECT YEAR(date) AS year, WEEK(date) AS week, IFNULL(SUM(incomeValue),0) AS weekly_income
                 FROM finance_records where uid = ${payload.uid}
                 GROUP BY YEAR(date), WEEK(date)
                 ORDER BY YEAR(date) DESC, WEEK(date) DESC
