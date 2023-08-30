@@ -4,6 +4,7 @@ const createError = require('http-errors')
 const Constants = require('./utils/Constants/response_messages')
 const IndexRoute = require('./routes/index')
 const cors = require('cors');
+const email = require('@sendgrid/mail')
 
 class App {
     constructor() {
@@ -23,6 +24,11 @@ class App {
                 "message": Constants.SUCCESS
             })
         })
+
+        // Adding the EMAIL Sender
+        email.setApiKey(process.env.SENDGRID_KEY);
+        global.DATA.UTILS.EMAILSENDER = email;
+
         // Use Routes after connection
         await new IndexRoute(this.app).initialize()
 

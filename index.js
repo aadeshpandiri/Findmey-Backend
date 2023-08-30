@@ -11,6 +11,7 @@ global.DATA = {
             const currentDate = moment();
             return currentDate;
         },
+        EMAILSENDER: undefined
     }
 }
 
