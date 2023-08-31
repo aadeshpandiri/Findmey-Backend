@@ -88,9 +88,41 @@ class AuthService {
             const messageBody = {
                 to: emailId,
                 from: process.env.EMAIL_SENDER,
-                subject: "Welcome to FINDEMY",
-                text: `Your Password reset link is ${Link}. 
-                Link is valid only for 15 minutes.`
+                subject: "Password Reset",
+                html: `
+                <html>
+                    <head>
+                        <style>
+                            .button {
+                                background-color: #4CAF50; /* Green */
+                                border: none;
+                                color: white;
+                                padding: 10px 20px;
+                                text-align: center;
+                                text-decoration: none;
+                                display: inline-block;
+                                font-size: 16px;
+                            }
+                        </style>
+                    <head>
+                    <body>
+                        <h2> Hello </h2>
+                        <p>You recently requested to reset your password for your FINDEMY account. Use the below button to reset it. <span>
+                        <b>This password reset link is only valid for the next 15 minutes.</b>
+                        </span></p>
+                        <p>If you did not request a password reset, please ignore this email or contact support if you have questions.
+                        </p>
+
+                        <p>
+                            <a href = ${Link}> <button class = "button" > RESET YOUR PASSWORD </button> </a>
+                        </p>    
+                        <p>
+                            Thanks, <br>
+                            FINDEMY Team
+                        </p>
+                    </body>
+                </html>
+                `
             }
 
             global.DATA.UTILS.EMAILSENDER.send(messageBody).then(message => {
@@ -310,6 +342,7 @@ class AuthService {
                 reject(createError.NotFound("User Not Found"))
             }
             var uniqueKey = crypto.randomBytes(30).toString('hex');
+            console.log("Unqiue key generated", uniqueKey)
             await DATA.CONNECTION.redis.set(uniqueKey, email, 'EX', 900)
                 .catch(err => {
                     console.log("Error with redis", err.message);
@@ -325,7 +358,7 @@ class AuthService {
 
     async changePassword(payload) {
         const key = payload.uniqueKey;
-        const data = await DATA.CONNECTION.redis.get(key.toString().slice(0, -1))
+        const data = await DATA.CONNECTION.redis.get(key)
             .catch(err => {
                 console.log("Error with redisclient get", err.mesasge);
                 throw createError.InternalServerError(Constants.REDIS_ERROR)
@@ -350,7 +383,7 @@ class AuthService {
             throw err;
         })
 
-        await DATA.CONNECTION.redis.del(key.toString().slice(0, -1))
+        await DATA.CONNECTION.redis.del(key)
         return "Password Updated Successfully"
     }
 }
