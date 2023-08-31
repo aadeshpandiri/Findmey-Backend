@@ -337,9 +337,11 @@ class AuthService {
             }).catch(err => {
                 console.log("Error during checking user", err.message)
                 reject(createError.InternalServerError(Constants.SQL_ERROR))
+                return;
             })
             if (!data) {
                 reject(createError.NotFound("User Not Found"))
+                return;
             }
             var uniqueKey = crypto.randomBytes(30).toString('hex');
             console.log("Unqiue key generated", uniqueKey)
