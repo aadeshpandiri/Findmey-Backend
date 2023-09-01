@@ -313,17 +313,43 @@ class DashboardService {
         })
     }
 
+    async getGoldPriceValue() {
+        const url = `https://api.metalpriceapi.com/v1/latest?api_key=${process.env.ACCESS_KEY_METALPRICEAPI}&base=XAU&currencies=INR`;
+        console.log("Gold URL", url)
+
+        const data = await axios.get(url).then(response => {
+            return response.data
+        }).catch(err => {
+            reject(createError.InternalServerError("AXIOS ERROR"))
+        })
+        return data;
+    }
+
+    async getGoldConversion(numberOfGramsPassed){
+        const dataAx = await this.getGoldPriceValue();
+        console.log('gold in view Gold:',);
+        let conversionGoldPriceToGrams = ( dataAx.rates['INR'] / 31.1034768 );
+        let currentGoldInvestmentValue = (numberOfGramsPassed * conversionGoldPriceToGrams);
+        console.log('current gold investment value:',currentGoldInvestmentValue);
+        return currentGoldInvestmentValue;
+    }
+
     getGoldDetails(data) {
-        return new Promise((resolve, reject) => {
+        return new Promise(async(resolve, reject) => {
             let response = null;
             if (data.length > 0) {
+                let currentGoldInvestmentValue;
+                let noOfGrams = data[0]?.numberOfGrams || 0;
+                currentGoldInvestmentValue = await this.getGoldConversion(noOfGrams);
+            
                 response = {
                     "img": "Gold",
                     "name": "Gold",
                     "label": "Gold",
                     "values": isNaN(data[0].investedAmount) ? 0 : data[0].investedAmount,
-                    "currentValues": isNaN(data[0].currentValue) ? 0 : data[0].currentValue,
+                    "currentValues": isNaN(data[0].totalAmount) ? 0 : data[0].totalAmount,
                     "numberOfGrams": isNaN(data[0].numberOfGrams) ? 0 : data[0].numberOfGrams,
+                    "currentGoldInvestmentValue":currentGoldInvestmentValue,
                     "percentage": 0
                 }
             }
@@ -335,7 +361,8 @@ class DashboardService {
                     "values": 0,
                     "currentValues": 0,
                     "numberOfGrams":0,
-                    "percentage": 0
+                    "percentage": 0,
+                    "currentGoldInvestmentValue":0,
                 }
             }
             resolve(response)
