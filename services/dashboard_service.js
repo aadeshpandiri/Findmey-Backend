@@ -347,9 +347,8 @@ class DashboardService {
                     "name": "Gold",
                     "label": "Gold",
                     "values": isNaN(data[0].investedAmount) ? 0 : data[0].investedAmount,
-                    "currentValues": isNaN(data[0].totalAmount) ? 0 : data[0].totalAmount,
+                    "currentValues": isNaN(currentGoldInvestmentValue) ? 0 : currentGoldInvestmentValue,
                     "numberOfGrams": isNaN(data[0].numberOfGrams) ? 0 : data[0].numberOfGrams,
-                    "currentGoldInvestmentValue":currentGoldInvestmentValue,
                     "percentage": 0
                 }
             }
@@ -362,7 +361,6 @@ class DashboardService {
                     "currentValues": 0,
                     "numberOfGrams":0,
                     "percentage": 0,
-                    "currentGoldInvestmentValue":0,
                 }
             }
             resolve(response)
