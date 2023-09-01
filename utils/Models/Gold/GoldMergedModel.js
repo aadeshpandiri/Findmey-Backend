@@ -16,7 +16,7 @@ const GoldMergedModel = global.DATA.CONNECTION.mysql.define("GoldMergedModel", {
         allowNull: false
     },
     numberOfGrams: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.FLOAT,
         allowNull: false
     },
     totalAmount: {

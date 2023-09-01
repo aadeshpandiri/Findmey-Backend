@@ -16,7 +16,7 @@ const GoldRecordModel = global.DATA.CONNECTION.mysql.define("GoldRecordModel", {
         allowNull: false
     },
     numberOfGrams: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.FLOAT,
         allowNull: false
     },
     totalAmount: {

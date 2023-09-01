@@ -16,7 +16,7 @@ const GoldHistoryModel = global.DATA.CONNECTION.mysql.define("GoldHistoryModel",
         allowNull: false
     },
     numberOfGrams: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.FLOAT,
         allowNull: false
     },
     totalAmount: {
