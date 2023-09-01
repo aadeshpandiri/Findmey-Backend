@@ -447,7 +447,7 @@ class DashboardService {
                 }
 
                 // Gold Data
-                const goldData = await DATA.CONNECTION.mysql.query(`select totalAmount, investedAmount from gold_records where uid =:uid`, {
+                const goldData = await DATA.CONNECTION.mysql.query(`select numberOfGrams, totalAmount, investedAmount from gold_records where uid =:uid`, {
                     type: Sequelize.QueryTypes.SELECT,
                     transaction: t,
                     replacements: {
