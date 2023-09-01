@@ -303,9 +303,9 @@ class DashboardService {
                     "id": data[i].id,
                     "name": data[i].trackerName,
                     "label": data[i].trackerName,
-                    "values": data[0].investedAmount,
-                    "currentValues": data[0].currentValue,
-                    "percentage": isNaN(((data[0].currentValue - data[0].investedAmount) / data[0].investedAmount) * 100) ? 0 : ((data[0].currentValue - data[0].investedAmount) / data[0].investedAmount) * 100
+                    "values": data[i].investedAmount,
+                    "currentValues": data[i].currentValue,
+                    "percentage": isNaN(((data[i].currentValue - data[i].investedAmount) / data[i].investedAmount) * 100) ? 0 : ((data[i].currentValue - data[i].investedAmount) / data[i].investedAmount) * 100
                 }
                 response.push(currentRecord)
             }

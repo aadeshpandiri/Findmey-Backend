@@ -5,6 +5,7 @@ const Constants = require('../utils/Constants/response_messages')
 const bcrypt = require('bcrypt')
 const { loginSchema, registerSchema } = require('../utils/SchemaValidations/authvalidation')
 const JwtHelper = require('../utils/Helpers/jwt_helper')
+var crypto = require("crypto");
 
 class AuthService {
     constructor() {
@@ -70,6 +71,58 @@ class AuthService {
                 subject: "Welcome to FINDEMY",
                 text: `Welcome to FINDEMY. Your OTP for registration is ${otp}. 
                 PLEASE DO NOT SHARE OTP WITH ANYONE. OTP is only valid for 2 Minutes`
+            }
+
+            global.DATA.UTILS.EMAILSENDER.send(messageBody).then(message => {
+                console.log("Email Sent to the Mail");
+                resolve("EMAIL SENT")
+            }).catch(err => {
+                console.log("Eror occured during email sending", err.message);
+                reject(createError.InternalServerError("EMAIL DID NOT SENT"))
+            })
+        })
+    }
+
+    sendLinkToEmail(emailId, Link) {
+        return new Promise((resolve, reject) => {
+            const messageBody = {
+                to: emailId,
+                from: process.env.EMAIL_SENDER,
+                subject: "Password Reset",
+                html: `
+                <html>
+                    <head>
+                        <style>
+                            .button {
+                                background-color: #4CAF50; /* Green */
+                                border: none;
+                                color: white;
+                                padding: 10px 20px;
+                                text-align: center;
+                                text-decoration: none;
+                                display: inline-block;
+                                font-size: 16px;
+                            }
+                        </style>
+                    <head>
+                    <body>
+                        <h2> Hello </h2>
+                        <p>You recently requested to reset your password for your FINDEMY account. Use the below button to reset it. <span>
+                        <b>This password reset link is only valid for the next 15 minutes.</b>
+                        </span></p>
+                        <p>If you did not request a password reset, please ignore this email or contact support if you have questions.
+                        </p>
+
+                        <p>
+                            <a href = ${Link}> <button class = "button" > RESET YOUR PASSWORD </button> </a>
+                        </p>    
+                        <p>
+                            Thanks, <br>
+                            FINDEMY Team
+                        </p>
+                    </body>
+                </html>
+                `
             }
 
             global.DATA.UTILS.EMAILSENDER.send(messageBody).then(message => {
@@ -273,6 +326,67 @@ class AuthService {
                     reject(createError.InternalServerError(Constants.REDIS_ERROR))
                 })
         })
+    }
+
+    forgotPassword(email) {
+        return new Promise(async (resolve, reject) => {
+            const data = await UserModel.findOne({
+                where: {
+                    email: email
+                }
+            }).catch(err => {
+                console.log("Error during checking user", err.message)
+                reject(createError.InternalServerError(Constants.SQL_ERROR))
+                return;
+            })
+            if (!data) {
+                reject(createError.NotFound("User Not Found"))
+                return;
+            }
+            var uniqueKey = crypto.randomBytes(30).toString('hex');
+            console.log("Unqiue key generated", uniqueKey)
+            await DATA.CONNECTION.redis.set(uniqueKey, email, 'EX', 900)
+                .catch(err => {
+                    console.log("Error with redis", err.message);
+                    reject(createError.InternalServerError(Constants.REDIS_ERROR))
+                })
+            const url = `http://findmey.in/forgotPassword/${uniqueKey}`
+
+            await this.sendLinkToEmail(email, url);
+
+            resolve("Email Sent to Mail Successfully")
+        })
+    }
+
+    async changePassword(payload) {
+        const key = payload.uniqueKey;
+        const data = await DATA.CONNECTION.redis.get(key)
+            .catch(err => {
+                console.log("Error with redisclient get", err.mesasge);
+                throw createError.InternalServerError(Constants.REDIS_ERROR)
+            })
+        if (data == null) {
+            throw createError.NotFound("Invalid Link")
+        }
+        console.log("User forgot password email", data)
+
+        const newPassword = payload.password;
+        const randomkey = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(newPassword, randomkey)
+
+        await UserModel.update({
+            password: hashedPassword
+        }, {
+            where: {
+                email: data
+            }
+        }).catch(err => {
+            console.log("Error while updating the password", err.message);
+            throw err;
+        })
+
+        await DATA.CONNECTION.redis.del(key)
+        return "Password Updated Successfully"
     }
 }
 

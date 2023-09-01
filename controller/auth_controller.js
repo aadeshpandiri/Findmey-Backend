@@ -129,4 +129,43 @@ router.delete('/logout', jwtHelperObj.verifyAccessToken, async (req, res, next) 
     }
 })
 
+router.post('/forgotPassword', async (req, res, next) => {
+    try {
+        const email = req.body.email;
+        const authServiceObj = new AuthService();
+        const data = await authServiceObj.forgotPassword(email)
+            .catch(err => {
+                throw err;
+            })
+
+        res.send({
+            "status": 200,
+            "message": Constants.SUCCESS,
+            "data": data
+        })
+    }
+    catch (err) {
+        next(err);
+    }
+})
+
+router.post('/updatePassword', async (req, res, next) => {
+    try {
+        const payload = req.body;
+        const authServiceObj = new AuthService();
+        const data = await authServiceObj.changePassword(payload)
+            .catch(err => {
+                throw err;
+            })
+        res.send({
+            "status": 200,
+            "message": Constants.SUCCESS,
+            "data": data
+        })
+    }
+    catch (err) {
+        next(err);
+    }
+})
+
 module.exports = router;
